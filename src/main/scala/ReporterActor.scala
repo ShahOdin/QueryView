@@ -14,7 +14,7 @@ case object LetItFlow
 
 class ReporterActor(snapshotFrequency:Int) extends PersistentActor {
 
-  override def persistenceId = "AccountReporter"
+  override def persistenceId = "AccountReporteR"
 
 
   var balanceCache = 0f
@@ -65,9 +65,7 @@ class ReporterActor(snapshotFrequency:Int) extends PersistentActor {
       events.runWith(Sink.actorRef(self, None))
 
     case EventEnvelope(_,_,_,evt:DomainEvent) ⇒
-      persist(evt) { evt =>
-        updateCache(evt)
-      }
+      updateCache(evt)
 
     case EventEnvelope(_,_,_,_) ⇒ bookKeeping()
 
