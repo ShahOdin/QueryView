@@ -69,7 +69,7 @@ class ReporterActor(snapshotFrequency:Int) extends PersistentActor {
         updateCache(evt)
       }
 
-    case EventEnvelope(_,_,_,_) ⇒ //nothing?
+    case EventEnvelope(_,_,_,_) ⇒ bookKeeping()
 
     case evt ⇒ println(s"didn't expect: $evt")
   }

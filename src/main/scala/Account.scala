@@ -7,7 +7,7 @@ import akka.persistence.fsm.PersistentFSM.FSMState
 
 object Account {
 
-	val persistenceId: String = "account4"
+	val persistenceId: String = "Account"
 
 	// Account States
 	sealed trait State extends FSMState
