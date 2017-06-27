@@ -74,5 +74,5 @@ class ReporterActor(snapshotFrequency:Int) extends PersistentActor {
 }
 
 object ReporterActor {
-  def props() = Props(new ReporterActor(10))
+  def props() = Props(new ReporterActor(2))
 }
