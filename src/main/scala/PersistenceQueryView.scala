@@ -18,7 +18,7 @@ abstract class PersistenceQueryView[DomainEvent, Data]
 
   val persistenceIdtoQuery:String
 
-  val journalQuerySupport:
+  val queryJournalForPersistentId:
     (String, Long) => Source[EventEnvelope, Unit]
 
   var cachedData :Data
@@ -39,6 +39,7 @@ abstract class PersistenceQueryView[DomainEvent, Data]
       self ! StartQueryStream
   }
 
+  //read commands reading off details from cachedData.
   val receiveReadCommand: Receive
 
   val receiveQueryViewCommand: Receive = {
@@ -51,7 +52,7 @@ abstract class PersistenceQueryView[DomainEvent, Data]
     case StartQueryStream ⇒
 
       implicit val materializer = ActorMaterializer()
-      val events= journalQuerySupport(persistenceIdtoQuery,journalEventOffset)
+      val events= queryJournalForPersistentId(persistenceIdtoQuery,journalEventOffset)
       events.runWith(Sink.actorRef(self, None))
 
     case EventEnvelope(_,_,_,domainEvent(evt)) ⇒

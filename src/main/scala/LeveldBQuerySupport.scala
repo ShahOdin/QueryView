@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 
 trait LeveldBQuerySupport extends Actor{
 
-  val journalQuerySupport:
+  val queryJournalForPersistentId:
   (String, Long) => Source[EventEnvelope, Unit]= {
       (idToQuery:String, queryOffset:Long) ⇒
         PersistenceQuery(context.system).
