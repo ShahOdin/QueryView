@@ -1,7 +1,6 @@
 package com.packt.akka
 
-import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
-import akka.persistence.query.{EventEnvelope, PersistenceQuery}
+import akka.persistence.query.EventEnvelope
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -17,9 +16,10 @@ abstract class PersistenceQueryView[DomainEvent, Data]
 
   val snapshotFrequency:Int
 
-  val persistenceIDtoQuery:String
+  val persistenceIdtoQuery:String
 
-  val journalIdentifier: String
+  val journalQuerySupport:
+    (String, Long) => Source[EventEnvelope, Unit]
 
   var cachedData :Data
   var journalEventOffset: Long = 0L
@@ -30,21 +30,10 @@ abstract class PersistenceQueryView[DomainEvent, Data]
       self ! RequestSnapshot
   }
 
-  def queryJournal(offset: Long):Option[Source[EventEnvelope, Unit]] = {
-
-    val pf: PartialFunction[String, Source[EventEnvelope, Unit]] = {
-      case id@LeveldbReadJournal.Identifier ⇒
-        PersistenceQuery(context.system).
-          readJournalFor[LeveldbReadJournal](id).
-          eventsByPersistenceId(persistenceIDtoQuery,offset)
-    }
-    pf.lift(journalIdentifier)
-  }
-
   val receiveRecover: Receive = {
     case SnapshotOffer(_, QueriedCachedData(cache_, offset_)) =>
       cachedData = cache_
-      journalEventOffset= offset_
+      journalEventOffset = offset_
 
     case RecoveryCompleted =>
       self ! StartQueryStream
@@ -62,9 +51,8 @@ abstract class PersistenceQueryView[DomainEvent, Data]
     case StartQueryStream ⇒
 
       implicit val materializer = ActorMaterializer()
-      for{
-        events ← queryJournal(journalEventOffset)
-      } yield events.runWith(Sink.actorRef(self, None))
+      val events= journalQuerySupport(persistenceIdtoQuery,journalEventOffset)
+      events.runWith(Sink.actorRef(self, None))
 
     case EventEnvelope(_,_,_,domainEvent(evt)) ⇒
       updateCache(evt)
