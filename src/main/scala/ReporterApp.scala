@@ -12,8 +12,6 @@ object ReporterApp extends App {
 
   val repoter = system.actorOf(ReporterActor.props())
 
-  repoter ! LetItFlow
-
 
   account ! Operation(7000, CR)
   account ! Operation(700, DR)
