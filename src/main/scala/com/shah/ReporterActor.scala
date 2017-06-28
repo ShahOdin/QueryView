@@ -22,7 +22,7 @@ class ReporterActor(override val snapshotFrequency:Int)
       case RejectedTransaction(_, _, _) ⇒ //nothing
     }
     bookKeeping()
-    println(s"Read side balance: $cachedData")// , offset: $journalEventOffset")
+    println(s"Read  side balance: $cachedData")// , offset: $journalEventOffset")
   }
 
   override val receiveReadCommand: Receive = Map.empty

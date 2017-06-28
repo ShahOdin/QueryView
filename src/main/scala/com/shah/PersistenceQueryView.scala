@@ -8,7 +8,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import scala.reflect.ClassTag
 
 abstract class PersistenceQueryView[DomainEvent, Data]
-(implicit domainEvent: ClassTag[DomainEvent]) extends PersistentActor{
+(implicit domainEvent: ClassTag[DomainEvent])
+  extends PersistentActor{
 
   case class QueriedCachedData(cache:Data, offset:Long)
   case object RequestSnapshot
@@ -44,7 +45,7 @@ abstract class PersistenceQueryView[DomainEvent, Data]
 
   val receiveQueryViewCommand: Receive = {
 
-    case `RequestSnapshot`⇒
+    case RequestSnapshot ⇒
       saveSnapshot(
         QueriedCachedData(cachedData, journalEventOffset)
       )
