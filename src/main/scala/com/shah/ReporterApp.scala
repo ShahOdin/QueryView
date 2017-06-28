@@ -16,7 +16,7 @@ object ReporterApp extends App {
   account ! Operation(7000, CR)
   account ! Operation(700, DR)
 
-  Thread.sleep(10000)
+  Thread.sleep(5000)
 
   system.terminate()
 

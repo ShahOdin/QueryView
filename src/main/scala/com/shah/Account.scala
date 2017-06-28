@@ -68,11 +68,11 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
 		evt match {
 			case AcceptedTransaction(amount, CR) =>
 				val newAmount = currentData.amount + amount
-				println(s"Write side balance: $newAmount")
+				println(s"+Write side balance: $newAmount")
 				Balance(currentData.amount + amount)
 			case AcceptedTransaction(amount, DR) =>
 				val newAmount = currentData.amount - amount
-				println(s"Write side balance: $newAmount")
+				println(s"-Write side balance: $newAmount")
 				if(newAmount > 0)
 					Balance(newAmount)
 				else

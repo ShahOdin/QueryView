@@ -44,7 +44,7 @@ abstract class PersistenceQueryView[DomainEvent, SNData, Data<: SnapshottableQue
   val receiveQueryViewCommand: Receive = {
 
     case RequestSnapshot ⇒
-      saveSnapshot(cachedData)
+      //saveSnapshot(cachedData)
 
     case StartQueryStream ⇒
 
