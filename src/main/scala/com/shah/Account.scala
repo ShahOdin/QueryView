@@ -7,7 +7,7 @@ import scala.reflect._
 
 object Account {
 
-	val persistenceId: String = "Account"
+	val identifier: String = "Account"
 
 	// Account States
 	sealed trait State extends FSMState
@@ -62,7 +62,7 @@ object Account {
 class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainEvent] {
 	import Account._
 
-	override def persistenceId: String = Account.persistenceId
+	override def persistenceId: String = Account.identifier
 
 	override def applyEvent(evt: DomainEvent, currentData: Data): Data = {
 		evt match {

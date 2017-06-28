@@ -2,24 +2,28 @@ package com.shah
 
 import akka.actor.Props
 import com.shah.Account._
-import com.shah.model.{LeveldBQuerySupport, PersistenceQueryView}
+import com.shah.model.{LeveldBQuerySupport, PersistenceQueryView, Snapshottable}
+
+case class AccountData( override var cache: Float,
+                        override var offset: Long= 0L) extends Snapshottable[Float]
 
 class ReporterActor(override val snapshotFrequency:Int)
-  extends PersistenceQueryView[DomainEvent,Float]
+  extends PersistenceQueryView[DomainEvent, Float, AccountData]
     with LeveldBQuerySupport{
 
-  override def persistenceId: String = ReporterActor.persistenceId
-  override val persistenceIdtoQuery: String = Account.persistenceId
+  override def persistenceId: String = ReporterActor.identifier
+  override val persistenceIdtoQuery: String = Account.identifier
 
-  override var cachedData: Float = 0f
+  override var cachedData = AccountData(0F)
+
   def updateCache(evt: DomainEvent): Unit = {
     evt match {
       case AcceptedTransaction(amount, CR) ⇒
-        cachedData += amount
+        cachedData.cache += amount
       case AcceptedTransaction(amount, DR) ⇒
-        val newAmount = cachedData - amount
+        val newAmount = cachedData.cache - amount
         if (newAmount > 0)
-          cachedData = newAmount
+          cachedData.cache = newAmount
       case RejectedTransaction(_, _, _) ⇒ //nothing
     }
     bookKeeping()
@@ -31,5 +35,5 @@ class ReporterActor(override val snapshotFrequency:Int)
 object ReporterActor {
   def props() = Props(new ReporterActor(3))
 
-  val persistenceId: String = "ReporterActor"
+  val identifier: String = "ReporterActor"
 }

@@ -7,34 +7,32 @@ import akka.stream.scaladsl.{Sink, Source}
 
 import scala.reflect.ClassTag
 
-abstract class PersistenceQueryView[DomainEvent, Data]
-(implicit domainEvent: ClassTag[DomainEvent])
+abstract class PersistenceQueryView[DomainEvent, SNData, Data<: Snapshottable[SNData]]
+(implicit domainEvent: ClassTag[DomainEvent], data: ClassTag[Data])
   extends PersistentActor{
 
-  case class QueriedCachedData(cache:Data, offset:Long)
   case object RequestSnapshot
   case object StartQueryStream
 
-  val snapshotFrequency:Int
+  val snapshotFrequency: Int
+  private var queryStreamStarted = false
 
-  val persistenceIdtoQuery:String
+  val persistenceIdtoQuery: String
 
   val queryJournalForPersistentId:
     (String, Long) => Source[EventEnvelope, Unit]
 
-  var cachedData :Data
-  var journalEventOffset: Long = 0L
+  var cachedData: Data
 
   def bookKeeping(): Unit ={
-    journalEventOffset+=1
-    if (journalEventOffset % snapshotFrequency == 0)
+    cachedData.offset+=1
+    if (cachedData.offset % snapshotFrequency == 0)
       self ! RequestSnapshot
   }
 
   val receiveRecover: Receive = {
-    case SnapshotOffer(_, QueriedCachedData(cache_, offset_)) =>
-      cachedData = cache_
-      journalEventOffset = offset_
+    case SnapshotOffer(_, data(cache)) =>
+      cachedData = cache
 
     case RecoveryCompleted =>
       self ! StartQueryStream
@@ -46,15 +44,17 @@ abstract class PersistenceQueryView[DomainEvent, Data]
   val receiveQueryViewCommand: Receive = {
 
     case RequestSnapshot ⇒
-      saveSnapshot(
-        QueriedCachedData(cachedData, journalEventOffset)
-      )
+      saveSnapshot(cachedData)
 
     case StartQueryStream ⇒
 
-      implicit val materializer = ActorMaterializer()
-      val events= queryJournalForPersistentId(persistenceIdtoQuery,journalEventOffset)
-      events.runWith(Sink.actorRef(self, None))
+      if(!queryStreamStarted)
+        {
+          queryStreamStarted=true
+          implicit val materializer = ActorMaterializer()
+          val events= queryJournalForPersistentId(persistenceIdtoQuery,cachedData.offset)
+          events.runWith(Sink.actorRef(self, None))
+        }
 
     case EventEnvelope(_,_,_,domainEvent(evt)) ⇒
       updateCache(evt)
