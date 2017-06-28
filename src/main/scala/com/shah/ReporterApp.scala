@@ -1,7 +1,7 @@
-package com.packt.akka
+package com.shah
 
 import akka.actor.{ActorSystem, Props}
-import com.packt.akka.Account.{CR, DR, Operation}
+import com.shah.Account.{CR, DR, Operation}
 
 
 object ReporterApp extends App {

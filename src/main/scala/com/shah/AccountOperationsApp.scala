@@ -1,10 +1,9 @@
-package com.packt.akka
+package com.shah
 
-import akka.persistence._
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
+import akka.actor.{ActorSystem, Props}
 
 
-object PersistentFSM extends App {
+object AccountOperationsApp extends App {
  import Account._
 
  val system = ActorSystem("persistent-fsm-actors")

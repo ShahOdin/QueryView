@@ -1,7 +1,7 @@
-package com.packt.akka
+package com.shah
 
 import akka.actor.Props
-import com.packt.akka.Account.{DomainEvent, _}
+import com.shah.Account._
 
 class ReporterActor(override val snapshotFrequency:Int)
   extends PersistenceQueryView[DomainEvent,Float]
@@ -22,7 +22,7 @@ class ReporterActor(override val snapshotFrequency:Int)
       case RejectedTransaction(_, _, _) ⇒ //nothing
     }
     bookKeeping()
-    println(s"after operation, cache: $cachedData , offset: $journalEventOffset")
+    println(s"read side balance: $cachedData")// , offset: $journalEventOffset")
   }
 
   override val receiveReadCommand: Receive = Map.empty
@@ -30,5 +30,5 @@ class ReporterActor(override val snapshotFrequency:Int)
 object ReporterActor {
   def props() = Props(new ReporterActor(3))
 
-  val persistenceId: String = "AccountReporteR"
+  val persistenceId: String = "ReporterActor"
 }

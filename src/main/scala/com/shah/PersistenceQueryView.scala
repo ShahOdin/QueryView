@@ -1,4 +1,4 @@
-package com.packt.akka
+package com.shah
 
 import akka.persistence.query.EventEnvelope
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}

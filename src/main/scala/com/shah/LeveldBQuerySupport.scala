@@ -1,8 +1,8 @@
-package com.packt.akka
+package com.shah
 
 import akka.actor.Actor
-import akka.persistence.query.{EventEnvelope, PersistenceQuery}
 import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
+import akka.persistence.query.{EventEnvelope, PersistenceQuery}
 import akka.stream.scaladsl.Source
 
 trait LeveldBQuerySupport extends Actor{

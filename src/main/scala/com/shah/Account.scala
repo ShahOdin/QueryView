@@ -1,9 +1,9 @@
-package com.packt.akka
+package com.shah
+
+import akka.persistence.fsm.PersistentFSM.FSMState
+import akka.persistence.fsm._
 
 import scala.reflect._
-import akka.persistence._
-import akka.persistence.fsm._
-import akka.persistence.fsm.PersistentFSM.FSMState
 
 object Account {
 
@@ -68,11 +68,11 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
 		evt match {
 			case AcceptedTransaction(amount, CR) =>
 				val newAmount = currentData.amount + amount
-				println(s"Your new balance is $newAmount")
+				println(s"The write side balance: $newAmount")
 				Balance(currentData.amount + amount)
 			case AcceptedTransaction(amount, DR) =>
 				val newAmount = currentData.amount - amount
-				println(s"Your new balance is $newAmount")
+				println(s"The write side balance: $newAmount")
 				if(newAmount > 0)
 					Balance(newAmount)
 				else
