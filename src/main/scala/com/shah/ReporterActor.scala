@@ -20,16 +20,15 @@ class ReporterActor(override val snapshotFrequency:Int)
     evt match {
       case AcceptedTransaction(amount, CR) ⇒
         cachedData.cache += amount
-        println(s"+Read  side balance: ${cachedData.cache}")
+        println(s"+Read  side balance: ${cachedData.cache}, offset: ${cachedData.offset}")
       case AcceptedTransaction(amount, DR) ⇒
         val newAmount = cachedData.cache - amount
         if (newAmount > 0)
           cachedData.cache = newAmount
-        println(s"-Read  side balance: ${cachedData.cache}")
+        println(s"-Read  side balance: ${cachedData.cache}, offset: ${cachedData.offset}")
       case RejectedTransaction(_, _, _) ⇒ //nothing
     }
     bookKeeping()
-    // , offset: $journalEventOffset")
   }
 
   override val receiveReadCommand: Receive = Map.empty
