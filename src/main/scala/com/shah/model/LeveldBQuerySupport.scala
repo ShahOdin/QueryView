@@ -1,4 +1,4 @@
-package com.shah
+package com.shah.model
 
 import akka.actor.Actor
 import akka.persistence.query.journal.leveldb.scaladsl.LeveldbReadJournal
