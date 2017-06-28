@@ -2,6 +2,7 @@ package com.shah
 
 import akka.actor.Props
 import com.shah.Account._
+import com.shah.model.{LeveldBQuerySupport, PersistenceQueryView}
 
 class ReporterActor(override val snapshotFrequency:Int)
   extends PersistenceQueryView[DomainEvent,Float]
