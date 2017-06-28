@@ -1,6 +1,6 @@
 package com.shah.model
 
-trait Snapshottable[D] {
+trait SnapshottableQuery[D] {
   var offset: Long
   var cache: D
 }

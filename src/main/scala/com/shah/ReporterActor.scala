@@ -2,10 +2,10 @@ package com.shah
 
 import akka.actor.Props
 import com.shah.Account._
-import com.shah.model.{LeveldBQuerySupport, PersistenceQueryView, Snapshottable}
+import com.shah.model.{LeveldBQuerySupport, PersistenceQueryView, SnapshottableQuery}
 
 case class AccountData( override var cache: Float,
-                        override var offset: Long= 0L) extends Snapshottable[Float]
+                        override var offset: Long= 0L) extends SnapshottableQuery[Float]
 
 class ReporterActor(override val snapshotFrequency:Int)
   extends PersistenceQueryView[DomainEvent, Float, AccountData]

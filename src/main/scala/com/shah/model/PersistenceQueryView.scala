@@ -7,7 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 
 import scala.reflect.ClassTag
 
-abstract class PersistenceQueryView[DomainEvent, SNData, Data<: Snapshottable[SNData]]
+abstract class PersistenceQueryView[DomainEvent, SNData, Data<: SnapshottableQuery[SNData]]
 (implicit domainEvent: ClassTag[DomainEvent], data: ClassTag[Data])
   extends PersistentActor{
 
