@@ -59,7 +59,7 @@ abstract class QueryView[DomainEvent, SNData, Data<: SnapshottableQuerriedData[S
       updateCache(evt)
 
     //internal events such as FSM state change which is private
-    case evt:EventEnvelope ⇒ bookKeeping()
+    case evt: EventEnvelope ⇒ bookKeeping()
 
     case SaveSnapshotSuccess(_) ⇒
 
