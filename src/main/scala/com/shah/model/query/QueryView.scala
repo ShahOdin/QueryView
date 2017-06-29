@@ -18,8 +18,7 @@ abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag
 
   val persistenceIdtoQuery: String
 
-  def queryJournalFrom(idToQuery: String, queryOffset: Long)
-  :Source[EventEnvelope, Unit]
+  def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
 
   var cachedData: D
 
@@ -39,7 +38,7 @@ abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag
       self ! StartQueryStream
   }
 
-  //read commands reading off details from cachedData.
+  //read commands for reading information derived from cachedData.
   val receiveReadCommand: Receive
 
   val receiveQueryViewCommand: Receive = {
@@ -57,14 +56,9 @@ abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag
     case EventEnvelope(_,_,_,event) ⇒
       updateCache(event)
       bookKeeping()
-
-    case SaveSnapshotSuccess(_) ⇒
-
-    case evt ⇒
-      println(s"unexpected event $evt")
   }
 
-  val receiveCommand: Receive = receiveQueryViewCommand orElse receiveReadCommand
+  def receiveCommand: Receive = receiveQueryViewCommand orElse receiveReadCommand
 
   def updateCache(evt: Any): Unit
 }
