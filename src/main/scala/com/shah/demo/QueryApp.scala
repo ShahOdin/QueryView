@@ -5,7 +5,7 @@ import com.shah.demo.Account.{CR, DR, Operation}
 import com.shah.model.query.PrintEvents
 
 
-object ReporterApp extends App {
+object QueryApp extends App {
 
   val system: ActorSystem = ActorSystem("persistent-query")
 

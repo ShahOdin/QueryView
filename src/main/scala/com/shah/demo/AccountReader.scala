@@ -2,13 +2,10 @@ package com.shah.demo
 
 import akka.actor.Props
 import com.shah.demo.Account._
-import com.shah.model.query.{LeveldBQuerySupport, QueryView, SnapshottableQuerriedData}
-
-case class AccountData( override var cache: Float,
-                        override var offsetForNextFetch: Long= 1L) extends SnapshottableQuerriedData[Float]
+import com.shah.model.query.{LeveldBQuerySupport, QueryView}
 
 class AccountReader(override val snapshotFrequency:Int)
-  extends QueryView[DomainEvent, Float, AccountData]
+  extends QueryView[DomainEvent, AccountData]
     with LeveldBQuerySupport{
 
   override def persistenceId: String = AccountReader.identifier

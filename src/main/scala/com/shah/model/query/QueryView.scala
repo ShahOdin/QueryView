@@ -10,8 +10,8 @@ import scala.reflect.ClassTag
 case object RequestSnapshot
 case object StartQueryStream
 
-abstract class QueryView[DomainEvent, SNData, Data<: SnapshottableQuerriedData[SNData]]
-(implicit domainEvent: ClassTag[DomainEvent], data: ClassTag[Data])
+abstract class QueryView[DomainEvent, D<: SnapshottableQuerriedData]
+(implicit domainEvent: ClassTag[DomainEvent], data: ClassTag[D])
   extends PersistentActor{
 
   val snapshotFrequency: Int
@@ -22,7 +22,7 @@ abstract class QueryView[DomainEvent, SNData, Data<: SnapshottableQuerriedData[S
   def queryJournalFrom(idToQuery: String, queryOffset: Long)
   :Source[EventEnvelope, Unit]
 
-  var cachedData: Data
+  var cachedData: D
 
   def bookKeeping(): Unit = {
     cachedData.offsetForNextFetch += 1
