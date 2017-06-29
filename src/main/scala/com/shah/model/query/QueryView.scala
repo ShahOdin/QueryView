@@ -10,8 +10,8 @@ import scala.reflect.ClassTag
 case object RequestSnapshot
 case object StartQueryStream
 
-abstract class QueryView[DomainEvent, D<: SnapshottableQuerriedData]
-(implicit domainEvent: ClassTag[DomainEvent], data: ClassTag[D])
+abstract class QueryView[E, D<: SnapshottableQuerriedData]
+(implicit domainEvent: ClassTag[E], data: ClassTag[D])
   extends PersistentActor{
 
   val snapshotFrequency: Int
@@ -69,6 +69,6 @@ abstract class QueryView[DomainEvent, D<: SnapshottableQuerriedData]
 
   val receiveCommand: Receive = receiveQueryViewCommand orElse receiveReadCommand
 
-  def updateCache(evt: DomainEvent): Unit
+  def updateCache(evt: E): Unit
 
 }
