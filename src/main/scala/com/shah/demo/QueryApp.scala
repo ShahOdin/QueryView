@@ -20,7 +20,9 @@ object QueryApp extends App {
   account ! Operation(400, CR)
   account ! Operation(200, DR)
 
+  reader ! ReadAccountBalance
   Thread.sleep(5000)
+  reader ! ReadAccountBalance
 
   system.terminate()
 

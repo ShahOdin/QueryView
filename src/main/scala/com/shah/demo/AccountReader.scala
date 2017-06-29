@@ -4,6 +4,8 @@ import akka.actor.Props
 import com.shah.demo.Account._
 import com.shah.model.query.{LeveldBQuerySupport, QueryView}
 
+case object ReadAccountBalance
+
 class AccountReader(override val snapshotFrequency:Int) extends QueryView[AccountData]
     with LeveldBQuerySupport{
 
@@ -23,12 +25,13 @@ class AccountReader(override val snapshotFrequency:Int) extends QueryView[Accoun
           cachedData.cache = newAmount
         println(s"-Read  side balance: ${cachedData.cache}")
       case RejectedTransaction(_, _, _) ⇒ //nothing
-
-      case _ ⇒ println(s"unexpected event received: ${evt}")
     }
   }
 
-  override val receiveReadCommand: Receive = Map.empty
+  override val receiveReadCommand: Receive = {
+    case ReadAccountBalance ⇒
+      println(s"Account balance: ${cachedData.cache}")
+  }
 }
 object AccountReader {
   def props() = Props(new AccountReader(3))
