@@ -1,17 +1,17 @@
-package com.shah
+package com.shah.demo
 
 import akka.actor.Props
-import com.shah.Account._
-import com.shah.model.{LeveldBQuerySupport, PersistenceQueryView, SnapshottableQuery}
+import com.shah.demo.Account._
+import com.shah.model.query.{LeveldBQuerySupport, QueryView, SnapshottableQuerriedData}
 
 case class AccountData( override var cache: Float,
-                        override var offset: Long= 0L) extends SnapshottableQuery[Float]
+                        override var offsetForNextFetch: Long= 1L) extends SnapshottableQuerriedData[Float]
 
-class ReporterActor(override val snapshotFrequency:Int)
-  extends PersistenceQueryView[DomainEvent, Float, AccountData]
+class AccountReader(override val snapshotFrequency:Int)
+  extends QueryView[DomainEvent, Float, AccountData]
     with LeveldBQuerySupport{
 
-  override def persistenceId: String = ReporterActor.identifier
+  override def persistenceId: String = AccountReader.identifier
   override val persistenceIdtoQuery: String = Account.identifier
 
   override var cachedData = AccountData(0F)
@@ -20,12 +20,12 @@ class ReporterActor(override val snapshotFrequency:Int)
     evt match {
       case AcceptedTransaction(amount, CR) ⇒
         cachedData.cache += amount
-        println(s"+Read  side balance: ${cachedData.cache}, offset: ${cachedData.offset}")
+        println(s"+Read  side balance: ${cachedData.cache}")
       case AcceptedTransaction(amount, DR) ⇒
         val newAmount = cachedData.cache - amount
         if (newAmount > 0)
           cachedData.cache = newAmount
-        println(s"-Read  side balance: ${cachedData.cache}, offset: ${cachedData.offset}")
+        println(s"-Read  side balance: ${cachedData.cache}")
       case RejectedTransaction(_, _, _) ⇒ //nothing
     }
     bookKeeping()
@@ -33,8 +33,8 @@ class ReporterActor(override val snapshotFrequency:Int)
 
   override val receiveReadCommand: Receive = Map.empty
 }
-object ReporterActor {
-  def props() = Props(new ReporterActor(3))
+object AccountReader {
+  def props() = Props(new AccountReader(3))
 
   val identifier: String = "ReporterActor"
 }

@@ -1,4 +1,4 @@
-package com.shah
+package com.shah.demo
 
 import akka.persistence.fsm.PersistentFSM.FSMState
 import akka.persistence.fsm._
@@ -98,10 +98,8 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
 
 	when(Active){
 		case Event(Operation(amount, CR), _) =>
-			println("CR command received")
 			stay applying AcceptedTransaction(amount, CR)
 		case Event(Operation(amount, DR), balance) =>
-			println("DR command received")
 			val newBalance = balance.amount - amount
 			if(newBalance > 0){
 				stay applying AcceptedTransaction(amount, DR)

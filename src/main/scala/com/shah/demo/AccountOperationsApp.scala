@@ -1,4 +1,4 @@
-package com.shah
+package com.shah.demo
 
 import akka.actor.{ActorSystem, Props}
 
@@ -11,8 +11,9 @@ object AccountOperationsApp extends App {
  val account = system.actorOf(Props[Account])
 
  account ! Operation(1000, CR)
-
- account ! Operation(10, DR)
+ account ! Operation(500, CR)
+ account ! Operation(50, DR)
+ account ! Operation(100, DR)
 
  Thread.sleep(1000)
 
