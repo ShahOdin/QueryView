@@ -10,8 +10,7 @@ import scala.reflect.ClassTag
 case object RequestSnapshot
 case object StartQueryStream
 
-abstract class QueryView[E, D<: SnapshottableQuerriedData]
-(implicit domainEvent: ClassTag[E], data: ClassTag[D])
+abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag[D])
   extends PersistentActor{
 
   val snapshotFrequency: Int
@@ -55,11 +54,9 @@ abstract class QueryView[E, D<: SnapshottableQuerriedData]
           events.runWith(Sink.actorRef(self, None))
         }
 
-    case EventEnvelope(_,_,_,domainEvent(evt)) ⇒
-      updateCache(evt)
-
-    //internal events such as FSM state change which is private
-    case evt: EventEnvelope ⇒ bookKeeping()
+    case EventEnvelope(_,_,_,event) ⇒
+      updateCache(event)
+      bookKeeping()
 
     case SaveSnapshotSuccess(_) ⇒
 
@@ -69,6 +66,5 @@ abstract class QueryView[E, D<: SnapshottableQuerriedData]
 
   val receiveCommand: Receive = receiveQueryViewCommand orElse receiveReadCommand
 
-  def updateCache(evt: E): Unit
-
+  def updateCache(evt: Any): Unit
 }
