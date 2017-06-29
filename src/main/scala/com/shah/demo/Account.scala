@@ -1,4 +1,4 @@
-package com.shah
+package com.shah.demo
 
 import akka.persistence.fsm.PersistentFSM.FSMState
 import akka.persistence.fsm._
@@ -7,7 +7,7 @@ import scala.reflect._
 
 object Account {
 
-	val persistenceId: String = "Account"
+	val identifier: String = "Account"
 
 	// Account States
 	sealed trait State extends FSMState
@@ -62,17 +62,17 @@ object Account {
 class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainEvent] {
 	import Account._
 
-	override def persistenceId: String = Account.persistenceId
+	override def persistenceId: String = Account.identifier
 
 	override def applyEvent(evt: DomainEvent, currentData: Data): Data = {
 		evt match {
 			case AcceptedTransaction(amount, CR) =>
 				val newAmount = currentData.amount + amount
-				println(s"Write side balance: $newAmount")
+				println(s"+Write side balance: $newAmount")
 				Balance(currentData.amount + amount)
 			case AcceptedTransaction(amount, DR) =>
 				val newAmount = currentData.amount - amount
-				println(s"Write side balance: $newAmount")
+				println(s"-Write side balance: $newAmount")
 				if(newAmount > 0)
 					Balance(newAmount)
 				else
@@ -98,10 +98,8 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
 
 	when(Active){
 		case Event(Operation(amount, CR), _) =>
-			println("CR command received")
 			stay applying AcceptedTransaction(amount, CR)
 		case Event(Operation(amount, DR), balance) =>
-			println("DR command received")
 			val newBalance = balance.amount - amount
 			if(newBalance > 0){
 				stay applying AcceptedTransaction(amount, DR)
