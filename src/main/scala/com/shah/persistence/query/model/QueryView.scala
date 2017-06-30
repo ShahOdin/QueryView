@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
 case object RequestSnapshot
 case object StartQueryStream
 
-abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag[D])
+abstract class QueryView[D<: QueryViewData](implicit data: ClassTag[D])
   extends PersistentActor{
 
   val snapshotFrequency: Int
