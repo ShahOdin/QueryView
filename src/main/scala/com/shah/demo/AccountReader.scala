@@ -32,6 +32,7 @@ class AccountReader(override val snapshotFrequency:Int) extends QueryView[Accoun
       case RejectedTransaction(_, _, _) ⇒ //nothing
   }
 }
+
 object AccountReader {
   def props() = Props(new AccountReader(3))
 

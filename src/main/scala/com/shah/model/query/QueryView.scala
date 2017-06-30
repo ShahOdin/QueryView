@@ -42,9 +42,7 @@ abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag
   val receiveReadCommand: Receive
 
   val receiveQueryViewCommand: Receive = {
-
     case StartQueryStream ⇒
-
       if(!queryStreamStarted)
         {
           queryStreamStarted=true

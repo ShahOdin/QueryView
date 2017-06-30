@@ -4,7 +4,6 @@ package com.shah.model.query
 // are advised to override it as one of their fields for potential equality purposes.
 
 trait SnapshottableQuerriedData {
-
   var offsetForNextFetch: Long //= 1L
 
   type Data
