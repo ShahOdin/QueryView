@@ -1,4 +1,4 @@
-package com.shah.demo
+package com.shah.persistence.demo
 
 import akka.actor.{ActorSystem, Props}
 

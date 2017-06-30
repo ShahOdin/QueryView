@@ -1,4 +1,4 @@
-package com.shah.model.query
+package com.shah.persistence.query.model
 
 import akka.actor.Actor
 import akka.persistence.query.EventEnvelope

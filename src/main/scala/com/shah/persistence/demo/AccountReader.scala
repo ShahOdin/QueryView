@@ -1,8 +1,8 @@
-package com.shah.demo
+package com.shah.persistence.demo
 
 import akka.actor.Props
-import com.shah.demo.Account._
-import com.shah.model.query.{LeveldBQuerySupport, QueryView}
+import com.shah.persistence.demo.Account._
+import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryView}
 
 case object ReadAccountBalance
 

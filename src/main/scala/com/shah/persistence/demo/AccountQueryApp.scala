@@ -1,8 +1,8 @@
-package com.shah.demo
+package com.shah.persistence.demo
 
 import akka.actor.{ActorSystem, Props}
-import com.shah.demo.Account.{CR, DR, Operation}
-import com.shah.model.query.PrintEvents
+import com.shah.persistence.demo.Account.{CR, DR, Operation}
+import com.shah.persistence.query.model.PrintEvents
 
 //reads Account events from journal via queries.
 object AccountQueryApp extends App {

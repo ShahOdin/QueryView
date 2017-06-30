@@ -1,7 +1,7 @@
-package com.shah.model.query
+package com.shah.persistence.query.model
 
 import akka.persistence.query.EventEnvelope
-import akka.persistence.{PersistentActor, RecoveryCompleted, SaveSnapshotSuccess, SnapshotOffer}
+import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 

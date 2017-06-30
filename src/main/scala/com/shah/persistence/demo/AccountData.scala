@@ -1,6 +1,6 @@
-package com.shah.demo
+package com.shah.persistence.demo
 
-import com.shah.model.query.SnapshottableQuerriedData
+import com.shah.persistence.query.model.SnapshottableQuerriedData
 
 case class AccountData( override var cache: Float,
                         override var offsetForNextFetch: Long= 1L) extends SnapshottableQuerriedData{
