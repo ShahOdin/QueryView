@@ -2,7 +2,7 @@ package com.shah.persistence.demo
 
 import akka.actor.{ActorSystem, Props}
 import com.shah.persistence.demo.Account.{CR, DR, Operation}
-import com.shah.persistence.query.model.PrintEvents
+import com.shah.persistence.query.model.{LeveldBInspector, PrintEvents}
 
 //reads Account events from journal via queries.
 object AccountQueryApp extends App {
@@ -29,7 +29,7 @@ object AccountInspectApp extends App{
 
   val system: ActorSystem = ActorSystem("AccountInspectApp")
 
-  val inspector = system.actorOf(Props[AccountInspector])
+  val inspector = system.actorOf(LeveldBInspector.props())
   inspector ! PrintEvents(Account.identifier)
 
   Thread.sleep(3000)
