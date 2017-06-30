@@ -54,11 +54,11 @@ abstract class QueryView[D<: SnapshottableQuerriedData] (implicit data: ClassTag
         }
 
     case EventEnvelope(_,_,_,event) ⇒
-      updateCache(event)
+      updateCache.lift(event)
       bookKeeping()
   }
 
   def receiveCommand: Receive = receiveQueryViewCommand orElse receiveReadCommand
 
-  def updateCache(evt: Any): Unit
+  def updateCache: Receive
 }

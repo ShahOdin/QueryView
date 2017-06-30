@@ -14,8 +14,12 @@ class AccountReader(override val snapshotFrequency:Int) extends QueryView[Accoun
 
   override var cachedData = AccountData(0F)
 
-  def updateCache(evt: Any): Unit = {
-    evt match {
+  override val receiveReadCommand: Receive = {
+    case ReadAccountBalance ⇒
+      println(s"Account balance: ${cachedData.cache}")
+  }
+
+  override def updateCache: Receive = {
       case AcceptedTransaction(amount, CR) ⇒
         cachedData.cache += amount
         println(s"+Read  side balance: ${cachedData.cache}")
@@ -24,13 +28,8 @@ class AccountReader(override val snapshotFrequency:Int) extends QueryView[Accoun
         if (newAmount > 0)
           cachedData.cache = newAmount
         println(s"-Read  side balance: ${cachedData.cache}")
-      case RejectedTransaction(_, _, _) ⇒ //nothing
-    }
-  }
 
-  override val receiveReadCommand: Receive = {
-    case ReadAccountBalance ⇒
-      println(s"Account balance: ${cachedData.cache}")
+      case RejectedTransaction(_, _, _) ⇒ //nothing
   }
 }
 object AccountReader {
