@@ -48,7 +48,7 @@ abstract class QueryView[D<: QueryViewData](implicit data: ClassTag[D])
           queryStreamStarted=true
           implicit val materializer = ActorMaterializer()
           val events= queryJournalFrom(persistenceIdtoQuery,cachedData.offsetForNextFetch)
-          events.runWith(Sink.actorRef(self, None))
+          events.map(self ! _).runWith(Sink.ignore)
         }
 
     case EventEnvelope(_,_,_,event) ⇒
