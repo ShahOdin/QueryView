@@ -5,6 +5,6 @@ PersistentView is now deprecated in Akka. QueryView is a lightweight implementat
 
 The basis of using `PersistenceQuery` can be seen in `QueryInspector` which creates a stream of events from a `PersistentActor` and will receive all the following events from that actor in its inbox. That would be the starting point to look at. `AccountInspectApp` demonstrates this. 
 
-`AccountQueryApp` fires up the persistent actor of interest as well as an account reader. The reader receives not only the events from the `Account` actor before the reader was created, but also the following events. the reader receives the persisted events from `Account` and updates its cache and responds to read queries based on its cache of the data at the time. 
+`AccountQueryApp` fires up the persistent actor of interest as well as an account reader. The reader receives not only the events from the `Account` actor before the reader was created, but also the following events. the reader receives the persisted events from `Account` and updates its cache and responds to read queries based on its cache of the data at the time. the result will be "eventually consistent" after the reader's cache of data is in sync with the write side. (`Account`)
 
 `AccountOperationsApp` populates the journal with some data and it can be run a few times to populate the journal with some event data.
