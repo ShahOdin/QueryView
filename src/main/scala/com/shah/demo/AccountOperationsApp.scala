@@ -2,7 +2,7 @@ package com.shah.demo
 
 import akka.actor.{ActorSystem, Props}
 
-
+//populates the journal with some events for the Account Persistent Actor.
 object AccountOperationsApp extends App {
  import Account._
 

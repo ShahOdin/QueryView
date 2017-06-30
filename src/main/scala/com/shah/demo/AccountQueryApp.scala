@@ -4,8 +4,9 @@ import akka.actor.{ActorSystem, Props}
 import com.shah.demo.Account.{CR, DR, Operation}
 import com.shah.model.query.PrintEvents
 
+//reads Account events from journal via queries.
 
-object QueryApp extends App {
+object AccountQueryApp extends App {
 
   val system: ActorSystem = ActorSystem("persistent-query")
 
