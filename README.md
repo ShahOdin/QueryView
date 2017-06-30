@@ -1,5 +1,5 @@
 # QueryView
-PersistentView is now deprecated in Akka. QueryView is a lightweight implementation of PersistentView, which snapshots its local cache of the data it builds up from the events related to `PersistentActor` of interest. it does not persist its data and relies only on regular snapshotting of the data it reads. 
+[PersistentView](http://doc.akka.io/japi/akka/2.4/akka/persistence/PersistentView.html) is deprecated in Akka 2.5. `QueryView` is a lightweight implementation of PersistentView, which snapshots its local cache of the data it builds up from the events related to `PersistentActor` of interest. it does not persist its data and relies only on regular snapshotting of the data it reads. 
 
 `QueryView` will be parameterised on a class mixing in the `SnapshottableQuerriedData` which contains the journal event offset data as well as the data to be cached.
 
