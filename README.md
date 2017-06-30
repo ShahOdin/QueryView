@@ -1,5 +1,7 @@
 # QueryView
-[PersistentView](http://doc.akka.io/japi/akka/2.4/akka/persistence/PersistentView.html) used to be a construct offered in Akka replicating the persistent message stream of a `PersistentActor`. Implementation classes received the message stream directly from the Journal. These messages could be processed to update internal state in order to maintain an (eventual consistent) view of the state of the corresponding persistent actor. It is now deprecated in Akka 2.5. `QueryView` is a lightweight implementation of PersistentView, which snapshots its local cache of the data it builds up from the events related to `PersistentActor` of interest. it does not persist its data and relies only on regular snapshotting of the data it reads. 
+[PersistentView](http://doc.akka.io/japi/akka/2.4/akka/persistence/PersistentView.html) used to be a construct offered in Akka replicating the persistent message stream of a `PersistentActor`. Implementation classes received the message stream directly from the Journal. These messages could be processed to update internal state in order to maintain an (eventual consistent) view of the state of the corresponding persistent actor. It is now deprecated in Akka 2.5. 
+
+`QueryView` is a lightweight implementation of PersistentView, which snapshots its local cache of the data it builds up from the events related to `PersistentActor` of interest. it does not persist its data and relies only on regular snapshotting of the data it reads. 
 
 `QueryView` will be parameterised on a class mixing in the `SnapshottableQuerriedData` which contains the journal event offset data as well as the data to be cached.
 
