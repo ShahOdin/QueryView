@@ -51,7 +51,7 @@ object AccountView {
             ec: ExecutionContext)
   =  Props(new AccountView(snapshotFrequency))
 
-  val identifier: String = "ReporterActor"
+  val identifier: String = "AccountView"
 }
 
 
