@@ -2,6 +2,7 @@ package com.shah.persistence.demo
 
 import akka.actor.Props
 import akka.persistence.PersistentActor
+import akka.stream.ActorMaterializer
 import com.shah.persistence.demo.Account._
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
 
@@ -22,6 +23,8 @@ class AccountView(val snapshotFrequency: Int)
   def queryId: String = Account.identifier
 
   var cachedData: Float = 0L
+
+  val materializer = ActorMaterializer()
 
   def handleReads: Receive ={
     case API.ReadAccountBalance ⇒
@@ -46,12 +49,14 @@ class AccountView(val snapshotFrequency: Int)
 
   def receiveCommand: Receive = updateCache orElse handleReads
   def receiveRecover: Receive = Map.empty
+
 }
 
 class AccountViewImpl(snapshotFrequency: Int)
                      (implicit data: ClassTag[Float],
                       ec: ExecutionContext)
-  extends AccountView(snapshotFrequency) with QueryViewImpl[Float] with LeveldBQuerySupport
+  extends AccountView(snapshotFrequency) with QueryViewImpl[Float] with LeveldBQuerySupport {
+}
 
 object AccountView {
   val API= AccountViewApi

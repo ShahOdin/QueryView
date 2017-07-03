@@ -7,6 +7,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import akka.pattern.ask
+import com.shah.persistence.query.model.QVSSnapshotter.API
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -28,6 +29,7 @@ trait QueryViewBase extends Snapshotter{
   val snapshotFrequency:Int
   protected var offsetForNextFetch: Long = 1
 
+  implicit val materializer: ActorMaterializer
 }
 
 case object StartQueryStream
@@ -39,13 +41,15 @@ trait QueryViewImplBase[D] extends QueryViewBase{
   def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
 
   def bookKeeping(): Unit = {
+    println(s"book keeping with: $offsetForNextFetch")
+
     for{
-      sequenceNr ← (SequenceSnapshotterRef ? QVSApi.IncrementFromSequenceNr).mapTo[Long]
+      API.QuerryOffset(sequenceNr) ← SequenceSnapshotterRef ? QVSApi.IncrementFromSequenceNr
     } {
       println(s"incremented $sequenceNr")
       offsetForNextFetch = sequenceNr
     }
-
+//todo: add +1 after fixing the life cycyle
     if (offsetForNextFetch % snapshotFrequency == 0)
     {
       saveSnapshot(cachedData)
@@ -54,7 +58,7 @@ trait QueryViewImplBase[D] extends QueryViewBase{
 
   abstract override def preStart() = {
     super.preStart()
-    val SequenceSnapshotterRef = context.actorOf(QVSApi.props(viewId,snapshotFrequency))
+    val SequenceSnapshotterRef = context.actorOf(QVSApi.props(viewId, snapshotFrequency))
   }
 
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
@@ -62,7 +66,6 @@ trait QueryViewImplBase[D] extends QueryViewBase{
       if(!queryStreamStarted)
       {
         queryStreamStarted=true
-        implicit val materializer = ActorMaterializer() //where should this go?
       val events= queryJournalFrom(queryId, offsetForNextFetch)
         events.map(self ! _).runWith(Sink.ignore)
       }
@@ -79,7 +82,7 @@ trait QueryViewImplBase[D] extends QueryViewBase{
 
     case RecoveryCompleted =>
       for{
-        sequenceNr ← (SequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr).mapTo[Long]
+        API.QuerryOffset(sequenceNr) ← SequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
       } {
         println(s"snapshot recovered: $sequenceNr")
         offsetForNextFetch = sequenceNr

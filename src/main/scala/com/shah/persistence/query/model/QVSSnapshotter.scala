@@ -5,8 +5,12 @@ import akka.persistence.{PersistentActor, SnapshotOffer}
 
 object QVSApi {
 
+  //commands
   case object IncrementFromSequenceNr
   case object GetLastSnapshottedSequenceNr
+
+  //"event" ?
+  case class QuerryOffset(from:Long)
 
   def props(
              viewId:String,
@@ -37,24 +41,28 @@ class QVSSnapshotter(viewId:String,
       offsetForNextFetch = nextOffset
   }
 
-  def incrementOffset ={
+  def incrementOffset() ={
     offsetForNextFetch += 1
     println(s"incremented: $offsetForNextFetch")
   }
 
+  def maybeSaveSnapshot()={
+    if (incrementsSinceLastSnapshot > snapshotFrequency+1) {
+      saveSnapshot(offsetForNextFetch)
+      incrementsSinceLastSnapshot = 0
+    } else {
+      incrementsSinceLastSnapshot += 1
+    }
+  }
+
   override def receiveCommand: Receive = {
     case API.IncrementFromSequenceNr ⇒
-      incrementOffset
-      if (incrementsSinceLastSnapshot > snapshotFrequency) {
-        saveSnapshot(offsetForNextFetch)
-        incrementsSinceLastSnapshot = 0
-      } else {
-        incrementsSinceLastSnapshot += 1
-      }
-      sender() ! offsetForNextFetch
+      incrementOffset()
+      maybeSaveSnapshot()
+      sender() ! API.QuerryOffset(offsetForNextFetch)
 
     case API.GetLastSnapshottedSequenceNr ⇒
-      sender() ! offsetForNextFetch
+      sender() ! API.QuerryOffset(offsetForNextFetch)
   }
 
   override def persistenceId: String = viewId + IdSuffix
