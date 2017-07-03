@@ -8,6 +8,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.ExecutionContext.Implicits.global
 
+//tests the sequence snapshotter!
 object QVSSApp extends App{
   val system: ActorSystem = ActorSystem("SequenceSnapshotting")
 

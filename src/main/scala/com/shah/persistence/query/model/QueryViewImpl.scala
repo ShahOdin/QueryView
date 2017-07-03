@@ -58,4 +58,9 @@ trait QueryViewImpl[D] extends QueryViewBase{
       self ! StartQueryStream
   }
 
+  override def receiveRecover: Receive = receiveQueryViewSnapshot
+
+  abstract override def receiveCommand: Receive = {
+    receiveQueryViewCommand andThen super.receiveCommand
+  }
 }
