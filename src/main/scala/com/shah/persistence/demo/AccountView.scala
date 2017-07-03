@@ -27,7 +27,7 @@ class AccountView(val snapshotFrequency: Int)
       println(s"Account balance: $cachedData")
 
     case event ⇒
-      println(s"unexpected event: $event")
+      //println(s"un-interesting event: $event")
   }
 
   def updateCache: Receive ={
@@ -43,7 +43,7 @@ class AccountView(val snapshotFrequency: Int)
     case RejectedTransaction(_, _, _) ⇒ //nothing
   }
 
-  def receiveCommand: Receive = (updateCache orElse handleReads).andThen(println)
+  def receiveCommand: Receive = updateCache orElse handleReads
   def receiveRecover: Receive = Map.empty
 }
 
