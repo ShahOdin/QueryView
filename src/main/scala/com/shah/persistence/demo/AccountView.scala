@@ -13,15 +13,15 @@ object AccountViewApi{
   case object ReadAccountBalance
 }
 
-class AccountView(override val snapshotFrequency: Int)
-                 (implicit override val data: ClassTag[Float],
-                  override val ec: ExecutionContext)
-  extends PersistentActor() with QueryView[Float] with LeveldBQuerySupport {
+abstract class AccountView(val snapshotFrequency: Int)
+                          (implicit val data: ClassTag[Float],
+                  val ec: ExecutionContext)
+  extends PersistentActor{
 
-  override def viewId: String = AccountView.identifier
-  override def queryId: String = Account.identifier
+  def viewId: String = AccountView.identifier
+  def queryId: String = Account.identifier
 
-  override var cachedData: Float = 0L
+  var cachedData: Float = 0L
 
   def handleReads: Receive ={
     case API.ReadAccountBalance ⇒
@@ -41,7 +41,7 @@ class AccountView(override val snapshotFrequency: Int)
     case RejectedTransaction(_, _, _) ⇒ //nothing
   }
 
-  override def receiveCommand: Receive = handleReads orElse updateCache
+  def receiveCommand: Receive = handleReads orElse updateCache
 }
 
 object AccountView {
@@ -49,7 +49,7 @@ object AccountView {
   def props(snapshotFrequency: Int)
            (implicit data: ClassTag[Float],
             ec: ExecutionContext)
-  =  Props(new AccountView(snapshotFrequency))
+  =  Props(new AccountView(snapshotFrequency) with QueryView[Float] with LeveldBQuerySupport)
 
   val identifier: String = "AccountView"
 }
