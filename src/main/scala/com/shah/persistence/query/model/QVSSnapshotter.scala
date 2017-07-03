@@ -29,7 +29,7 @@ class QVSSnapshotter(viewId:String,
                                   ) extends PersistentActor{
   import QVSSnapshotter._
 
-  private var offsetForNextFetch: Long= 0L
+  private var offsetForNextFetch: Long= 1L
   private var incrementsSinceLastSnapshot: Int= 0
 
   override def receiveRecover: Receive = {
@@ -39,6 +39,7 @@ class QVSSnapshotter(viewId:String,
 
   def incrementOffset ={
     offsetForNextFetch += 1
+    println(s"incremented: $offsetForNextFetch")
   }
 
   override def receiveCommand: Receive = {
@@ -50,6 +51,7 @@ class QVSSnapshotter(viewId:String,
       } else {
         incrementsSinceLastSnapshot += 1
       }
+      sender() ! offsetForNextFetch
 
     case API.GetLastSnapshottedSequenceNr ⇒
       sender() ! offsetForNextFetch

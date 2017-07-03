@@ -50,8 +50,8 @@ class AccountView(val snapshotFrequency: Int)
 
 class AccountViewImpl(snapshotFrequency: Int)
                      (implicit data: ClassTag[Float],
-                      ec: ExecutionContext) extends
-  AccountView(snapshotFrequency) with QueryViewImpl[Float] with LeveldBQuerySupport
+                      ec: ExecutionContext)
+  extends AccountView(snapshotFrequency) with QueryViewImpl[Float] with LeveldBQuerySupport
 
 object AccountView {
   val API= AccountViewApi
