@@ -1,6 +1,7 @@
 package com.shah.persistence.demo
 
 import akka.actor.Props
+import akka.persistence.PersistentActor
 import com.shah.persistence.demo.Account._
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
 
@@ -14,7 +15,7 @@ object AccountViewApi{
 class AccountView(val snapshotFrequency: Int)
                      (implicit val data: ClassTag[Float],
                   val ec: ExecutionContext)
-  extends QueryViewBase{
+  extends PersistentActor with QueryViewBase{
   import AccountView._
 
   def viewId: String = AccountView.identifier
