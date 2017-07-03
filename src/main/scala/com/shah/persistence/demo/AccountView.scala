@@ -1,10 +1,8 @@
 package com.shah.persistence.demo
 
 import akka.actor.Props
-import akka.persistence.PersistentActor
 import com.shah.persistence.demo.Account._
-import com.shah.persistence.demo.AccountView.API
-import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryView, QueryViewBase}
+import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -14,9 +12,10 @@ object AccountViewApi{
 }
 
 class AccountView(val snapshotFrequency: Int)
-                          (implicit val data: ClassTag[Float],
+                     (implicit val data: ClassTag[Float],
                   val ec: ExecutionContext)
-  extends QueryViewBase[Float] with LeveldBQuerySupport{
+  extends QueryViewBase{
+  import AccountView._
 
   def viewId: String = AccountView.identifier
   def queryId: String = Account.identifier
@@ -42,20 +41,19 @@ class AccountView(val snapshotFrequency: Int)
   }
 
   def receiveCommand: Receive = handleReads orElse updateCache
-
-  override def receiveRecover: Receive = Map.empty
+  def receiveRecover: Receive = Map.empty
 }
 
-class AccountViewImplementation(snapshotFrequency: Int)
-                               (implicit data: ClassTag[Float],
-                                ec: ExecutionContext) extends
-  AccountView(snapshotFrequency) with QueryView[Float]
+class AccountViewImpl(snapshotFrequency: Int)
+                     (implicit data: ClassTag[Float],
+                      ec: ExecutionContext) extends
+  AccountView(snapshotFrequency) with QueryViewImpl[Float] with LeveldBQuerySupport
 
 object AccountView {
   val API= AccountViewApi
 
   def props(snapshotFrequency: Int)(implicit data: ClassTag[Float], ec: ExecutionContext)
-  =  Props(new AccountViewImplementation(snapshotFrequency))
+  =  Props(new AccountViewImpl(snapshotFrequency))
 
   val identifier: String = "AccountView"
 }
