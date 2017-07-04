@@ -1,7 +1,7 @@
 package com.shah.persistence.query.model
 
 import akka.actor.Props
-import akka.persistence.{PersistentActor, SnapshotOffer}
+import akka.persistence.{PersistentActor, SaveSnapshotFailure, SnapshotOffer}
 
 object QVSApi {
 
@@ -38,7 +38,10 @@ class QVSSnapshotter(viewId:String,
 
   override def receiveRecover: Receive = {
     case SnapshotOffer(_, nextOffset:Long) ⇒
+      println(s"Snapshotter recovered snapshot with offset: $nextOffset")
       offsetForNextFetch = nextOffset
+    case SaveSnapshotFailure(_, reason) =>
+      println(s"save snapshot failed and failure is $reason")
   }
 
   def incrementOffset() ={
@@ -63,6 +66,13 @@ class QVSSnapshotter(viewId:String,
 
     case API.GetLastSnapshottedSequenceNr ⇒
       sender() ! API.QuerryOffset(offsetForNextFetch)
+
+    case cmd ⇒
+      println(s"unrecognized command: $cmd")
+  }
+
+  override def preStart() = {
+    println("snapshotter spawn!")
   }
 
   override def persistenceId: String = viewId + IdSuffix

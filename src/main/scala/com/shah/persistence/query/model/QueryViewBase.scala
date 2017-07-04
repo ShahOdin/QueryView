@@ -58,6 +58,7 @@ trait QueryViewImplBase[D] extends QueryViewBase{
 
   abstract override def preStart() = {
     super.preStart()
+    println("running preStart")
     val SequenceSnapshotterRef = context.actorOf(QVSApi.props(viewId, snapshotFrequency))
   }
 
@@ -87,7 +88,6 @@ trait QueryViewImplBase[D] extends QueryViewBase{
         println(s"snapshot recovered: $sequenceNr")
         offsetForNextFetch = sequenceNr
       }
-      println(s"snapshot recovered: $offsetForNextFetch")
       self ! StartQueryStream
   }
 }
