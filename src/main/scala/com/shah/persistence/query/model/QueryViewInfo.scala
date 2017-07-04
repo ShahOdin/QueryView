@@ -10,7 +10,6 @@ import com.shah.persistence.query.model.QVSSnapshotter.API
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
 import akka.pattern.ask
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}

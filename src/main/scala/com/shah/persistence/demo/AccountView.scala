@@ -1,7 +1,6 @@
 package com.shah.persistence.demo
 
 import akka.actor.{Actor, Props}
-import akka.persistence.PersistentActor
 import akka.stream.ActorMaterializer
 import com.shah.persistence.demo.Account._
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewImpl, QueryViewBase}

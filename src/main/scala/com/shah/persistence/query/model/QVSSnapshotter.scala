@@ -1,7 +1,7 @@
 package com.shah.persistence.query.model
 
 import akka.actor.Props
-import akka.persistence.{PersistentActor, SaveSnapshotFailure, SnapshotOffer}
+import akka.persistence.{PersistentActor, SnapshotOffer}
 
 object QVSApi {
 
