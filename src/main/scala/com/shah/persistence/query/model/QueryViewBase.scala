@@ -29,6 +29,8 @@ trait QueryViewBase extends Snapshotter{
   protected var offsetForNextFetch: Long = 1
 
   implicit val materializer: ActorMaterializer
+
+  def receiveRecover: Receive = Map.empty
 }
 
 case object StartQueryStream
