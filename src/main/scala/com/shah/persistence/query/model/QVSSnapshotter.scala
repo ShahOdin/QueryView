@@ -67,12 +67,6 @@ class QVSSnapshotter(viewId:String,
     case API.GetLastSnapshottedSequenceNr ⇒
       sender() ! API.QuerryOffset(offsetForNextFetch)
 
-    case cmd ⇒
-      println(s"unrecognized command: $cmd")
-  }
-
-  override def preStart() = {
-    println("snapshotter spawn!")
   }
 
   override def persistenceId: String = viewId + IdSuffix

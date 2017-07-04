@@ -25,7 +25,7 @@ trait QueryViewBase extends Snapshotter{
 
   protected var queryStreamStarted = false
 
-  var SequenceSnapshotterRef: ActorRef = _
+  var sequenceSnapshotterRef: ActorRef = _
   val snapshotFrequency:Int
   protected var offsetForNextFetch: Long = 1
 
@@ -41,14 +41,14 @@ trait QueryViewImplBase[D] extends QueryViewBase{
   def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
 
   def bookKeeping(): Unit = {
-    println(s"book keeping with: $offsetForNextFetch")
-
     for{
-      API.QuerryOffset(sequenceNr) ← SequenceSnapshotterRef ? QVSApi.IncrementFromSequenceNr
+      API.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.IncrementFromSequenceNr
     } {
-      println(s"incremented $sequenceNr")
       offsetForNextFetch = sequenceNr
+      println(s"updated the books with: $offsetForNextFetch ->")
     }
+    println(s"book keeping done with: $offsetForNextFetch ^")
+
 //todo: add +1 after fixing the life cycyle
     if (offsetForNextFetch % snapshotFrequency == 0)
     {
@@ -59,7 +59,7 @@ trait QueryViewImplBase[D] extends QueryViewBase{
   abstract override def preStart() = {
     super.preStart()
     println("running preStart")
-    val SequenceSnapshotterRef = context.actorOf(QVSApi.props(viewId, snapshotFrequency))
+    sequenceSnapshotterRef = context.actorOf(QVSApi.props(viewId, snapshotFrequency))
   }
 
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
@@ -83,7 +83,7 @@ trait QueryViewImplBase[D] extends QueryViewBase{
 
     case RecoveryCompleted =>
       for{
-        API.QuerryOffset(sequenceNr) ← SequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
+        API.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
       } {
         println(s"snapshot recovered: $sequenceNr")
         offsetForNextFetch = sequenceNr
