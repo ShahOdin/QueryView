@@ -2,7 +2,10 @@ package com.shah.persistence.demo
 
 import akka.actor.{ActorSystem, Props}
 import com.shah.persistence.demo.Account.{CR, DR, Operation}
+import com.shah.persistence.demo.AccountViewApi.ReadAccountBalance
 import com.shah.persistence.query.model.{LeveldBInspector, PrintEvents}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 //reads Account events from journal via queries.
 object AccountQueryApp extends App {
@@ -11,7 +14,7 @@ object AccountQueryApp extends App {
 
   val account = system.actorOf(Props[Account])
 
-  val reader = system.actorOf(AccountReader.props())
+  val reader = system.actorOf(AccountView.props(5))
 
   account ! Operation(400, CR)
   account ! Operation(200, DR)
