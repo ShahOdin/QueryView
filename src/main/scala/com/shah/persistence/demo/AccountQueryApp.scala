@@ -14,7 +14,7 @@ object AccountQueryApp extends App {
 
   val account = system.actorOf(Props[Account])
 
-  val reader = system.actorOf(AccountView.props(5))
+  val reader = system.actorOf(AccountViewImpl.props(5))
 
   account ! Operation(400, CR)
   account ! Operation(200, DR)

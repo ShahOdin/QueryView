@@ -16,9 +16,6 @@ import scala.util.{Failure, Success}
 
 trait QueryViewBase extends Snapshotter{
 
-  implicit val ec: ExecutionContext
-  implicit val timeout = Timeout(3 seconds)
-
   def viewId: String
   def queryId: String
 
@@ -38,6 +35,9 @@ case object StartQueryStream
 trait QueryViewImplBase[D] extends QueryViewBase{
   var cachedData: D
   implicit val data: ClassTag[D]
+
+  implicit val ec: ExecutionContext
+  implicit val timeout = Timeout(3 seconds)
 
   val snapshotFrequency:Int
   var sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
