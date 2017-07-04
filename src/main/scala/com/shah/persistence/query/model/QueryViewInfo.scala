@@ -1,20 +1,21 @@
 package com.shah.persistence.query.model
 
 import akka.actor.ActorRef
-import akka.persistence.{RecoveryCompleted, SnapshotOffer, Snapshotter}
+import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import akka.persistence.query.EventEnvelope
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
-import akka.pattern.ask
 import com.shah.persistence.query.model.QVSSnapshotter.API
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
+import akka.pattern.ask
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
 
-trait QueryViewBase extends Snapshotter{
+trait QueryViewInfo {
 
   def viewId: String
   def queryId: String
@@ -24,25 +25,26 @@ trait QueryViewBase extends Snapshotter{
   protected var queryStreamStarted = false
 
   protected var offsetForNextFetch: Long = 1
-
-  implicit val materializer: ActorMaterializer
-
-  def receiveRecover: Receive = Map.empty
 }
 
-case object StartQueryStream
-
-trait QueryViewImplBase[D] extends QueryViewBase{
-  var cachedData: D
-  implicit val data: ClassTag[D]
+//This needs to be mixed in to create and enable the pipelines to be assembled.
+trait QueryViewImplBase[D] extends PersistentActor with QueryViewInfo{
+  implicit val materializer: ActorMaterializer
 
   implicit val ec: ExecutionContext
   implicit val timeout = Timeout(3 seconds)
 
   val snapshotFrequency:Int
-  var sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
-
+  val sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
   def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
+
+  var cachedData: D
+  implicit val data: ClassTag[D]
+
+  def unhandledCommand: Receive = {
+    case event ⇒
+      println(s"un-caught event: $event")
+  }
 
   def bookKeeping(): Unit = {
     offsetForNextFetch += 1
@@ -65,7 +67,7 @@ trait QueryViewImplBase[D] extends QueryViewBase{
       if(!queryStreamStarted)
       {
         queryStreamStarted=true
-      val events= queryJournalFrom(queryId, offsetForNextFetch)
+        val events= queryJournalFrom(queryId, offsetForNextFetch)
         events.map(self ! _).runWith(Sink.ignore)
       }
     case EventEnvelope(_,_,_,event) ⇒
@@ -88,4 +90,6 @@ trait QueryViewImplBase[D] extends QueryViewBase{
       self ! StartQueryStream
   }
 }
+
+case object StartQueryStream
 

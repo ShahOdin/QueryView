@@ -1,10 +1,10 @@
 package com.shah.persistence.demo
 
-import akka.actor.Props
+import akka.actor.{Actor, Props}
 import akka.persistence.PersistentActor
 import akka.stream.ActorMaterializer
 import com.shah.persistence.demo.Account._
-import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
+import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewImpl, QueryViewBase}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -13,16 +13,13 @@ object AccountViewApi{
   case object ReadAccountBalance
 }
 
-class AccountView
-  extends PersistentActor with QueryViewBase{
-  import AccountViewImpl._
+class AccountView extends Actor with QueryViewBase{
+  import AccountView._
 
-  def viewId: String = AccountViewImpl.identifier
+  def viewId: String = AccountView.identifier
   def queryId: String = Account.identifier
 
   var cachedData: Float = 0L
-
-  val materializer = ActorMaterializer()
 
   def handleReads: Receive ={
     case API.ReadAccountBalance ⇒
@@ -42,15 +39,16 @@ class AccountView
     case RejectedTransaction(_, _, _) ⇒
   }
 
-  def receiveCommand: Receive = updateCache orElse handleReads
+  override def receiveCommand: Receive = updateCache orElse handleReads
 }
 
 class AccountViewImpl(override val snapshotFrequency: Int)
                      (implicit override val data: ClassTag[Float], override val ec: ExecutionContext)
   extends AccountView with QueryViewImpl[Float] with LeveldBQuerySupport {
+  val materializer = ActorMaterializer()
 }
 
-object AccountViewImpl {
+object AccountView {
   val API= AccountViewApi
 
   def props(snapshotFrequency: Int)(implicit data: ClassTag[Float], ec: ExecutionContext)
