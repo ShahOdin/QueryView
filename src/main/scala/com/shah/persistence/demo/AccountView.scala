@@ -13,8 +13,7 @@ object AccountViewApi{
   case object ReadAccountBalance
 }
 
-class AccountView(val snapshotFrequency: Int)
-                     (implicit val data: ClassTag[Float],
+class AccountView(implicit val data: ClassTag[Float],
                   val ec: ExecutionContext)
   extends PersistentActor with QueryViewBase{
   import AccountView._
@@ -52,10 +51,10 @@ class AccountView(val snapshotFrequency: Int)
 
 }
 
-class AccountViewImpl(snapshotFrequency: Int)
+class AccountViewImpl(override val snapshotFrequency: Int)
                      (implicit data: ClassTag[Float],
                       ec: ExecutionContext)
-  extends AccountView(snapshotFrequency) with QueryViewImpl[Float] with LeveldBQuerySupport {
+  extends AccountView with QueryViewImpl[Float] with LeveldBQuerySupport {
 }
 
 object AccountView {

@@ -6,17 +6,15 @@ import akka.persistence.{PersistentActor, SaveSnapshotFailure, SnapshotOffer}
 object QVSApi {
 
   //commands
-  case object IncrementFromSequenceNr
+  case class UpdateSequenceNr(from: Long)
   case object GetLastSnapshottedSequenceNr
 
-  //"event" ?
+  //"events" ?
   case class QuerryOffset(from:Long)
+  case object OffsetUpdated
 
-  def props(
-             viewId:String,
-             snapshotFrequency:Int
-           ): Props =
-    Props(new QVSSnapshotter(viewId, snapshotFrequency))
+  def props(viewId:String): Props =
+    Props(new QVSSnapshotter(viewId))
 
 }
 
@@ -25,12 +23,8 @@ object QVSSnapshotter {
   val IdSuffix = "-SequenceSnapshotter"
 }
 
-//this class only snapshots without persisting the events.
-
 // QVS: QueryViewSequence
-class QVSSnapshotter(viewId:String,
-                     snapshotFrequency:Int
-                                  ) extends PersistentActor{
+class QVSSnapshotter(viewId:String) extends PersistentActor{
   import QVSSnapshotter._
 
   private var offsetForNextFetch: Long= 1L
@@ -38,35 +32,18 @@ class QVSSnapshotter(viewId:String,
 
   override def receiveRecover: Receive = {
     case SnapshotOffer(_, nextOffset:Long) ⇒
-      println(s"Snapshotter recovered snapshot with offset: $nextOffset")
       offsetForNextFetch = nextOffset
-    case SaveSnapshotFailure(_, reason) =>
-      println(s"save snapshot failed and failure is $reason")
-  }
-
-  def incrementOffset() ={
-    offsetForNextFetch += 1
-    println(s"incremented: $offsetForNextFetch")
-  }
-
-  def maybeSaveSnapshot()={
-    if (incrementsSinceLastSnapshot > snapshotFrequency+1) {
-      saveSnapshot(offsetForNextFetch)
-      incrementsSinceLastSnapshot = 0
-    } else {
-      incrementsSinceLastSnapshot += 1
-    }
   }
 
   override def receiveCommand: Receive = {
-    case API.IncrementFromSequenceNr ⇒
-      incrementOffset()
-      maybeSaveSnapshot()
-      sender() ! API.QuerryOffset(offsetForNextFetch)
 
     case API.GetLastSnapshottedSequenceNr ⇒
       sender() ! API.QuerryOffset(offsetForNextFetch)
 
+    case API.UpdateSequenceNr(from: Long) ⇒
+      offsetForNextFetch = from
+      saveSnapshot(offsetForNextFetch)
+      sender()! API.OffsetUpdated
   }
 
   override def persistenceId: String = viewId + IdSuffix

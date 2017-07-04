@@ -9,9 +9,10 @@ import akka.util.Timeout
 import akka.pattern.ask
 import com.shah.persistence.query.model.QVSSnapshotter.API
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
 trait QueryViewBase extends Snapshotter{
 
@@ -25,8 +26,6 @@ trait QueryViewBase extends Snapshotter{
 
   protected var queryStreamStarted = false
 
-  var sequenceSnapshotterRef: ActorRef = _
-  val snapshotFrequency:Int
   protected var offsetForNextFetch: Long = 1
 
   implicit val materializer: ActorMaterializer
@@ -38,28 +37,30 @@ trait QueryViewImplBase[D] extends QueryViewBase{
   var cachedData: D
   implicit val data: ClassTag[D]
 
+  val snapshotFrequency:Int
+  var sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
+
   def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
 
   def bookKeeping(): Unit = {
-    for{
-      API.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.IncrementFromSequenceNr
-    } {
-      offsetForNextFetch = sequenceNr
-      println(s"updated the books with: $offsetForNextFetch ->")
-    }
-    println(s"book keeping done with: $offsetForNextFetch ^")
+    offsetForNextFetch += 1
 
-//todo: add +1 after fixing the life cycyle
-    if (offsetForNextFetch % snapshotFrequency == 0)
+    if (offsetForNextFetch % (snapshotFrequency+1) == 0)
     {
-      saveSnapshot(cachedData)
+      val offsetUpdated = sequenceSnapshotterRef ? API.UpdateSequenceNr(offsetForNextFetch)
+
+      offsetUpdated onComplete{
+        case Success(v) ⇒
+          saveSnapshot(cachedData)
+        case Failure(t) ⇒
+          context.stop(self)
+      }
     }
   }
 
   abstract override def preStart() = {
     super.preStart()
-    println("running preStart")
-    sequenceSnapshotterRef = context.actorOf(QVSApi.props(viewId, snapshotFrequency))
+    //sequenceSnapshotterRef =
   }
 
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
@@ -85,7 +86,6 @@ trait QueryViewImplBase[D] extends QueryViewBase{
       for{
         API.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
       } {
-        println(s"snapshot recovered: $sequenceNr")
         offsetForNextFetch = sequenceNr
       }
       self ! StartQueryStream
