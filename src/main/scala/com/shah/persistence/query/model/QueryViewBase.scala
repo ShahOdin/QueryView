@@ -58,11 +58,6 @@ trait QueryViewImplBase[D] extends QueryViewBase{
     }
   }
 
-  abstract override def preStart() = {
-    super.preStart()
-    //sequenceSnapshotterRef =
-  }
-
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
     case StartQueryStream ⇒
       if(!queryStreamStarted)

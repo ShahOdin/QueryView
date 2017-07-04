@@ -28,9 +28,6 @@ class AccountView(implicit val data: ClassTag[Float],
   def handleReads: Receive ={
     case API.ReadAccountBalance ⇒
       println(s"Account balance: $cachedData")
-
-    case event ⇒
-      //println(s"un-interesting event: $event")
   }
 
   def updateCache: Receive ={
@@ -43,7 +40,7 @@ class AccountView(implicit val data: ClassTag[Float],
         cachedData = newAmount
       println(s"-Read  side balance: $cachedData")
 
-    case RejectedTransaction(_, _, _) ⇒ //nothing
+    case RejectedTransaction(_, _, _) ⇒
   }
 
   def receiveCommand: Receive = updateCache orElse handleReads
