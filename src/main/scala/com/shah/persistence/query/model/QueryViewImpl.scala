@@ -7,6 +7,9 @@ import akka.persistence.PersistentActor
 
 //The view Persistent Actors can mix-in this trait to specify the main logic of the view actor.
 trait QueryViewBase extends PersistentActor with QueryViewInfo {
+
+  def persistenceId: String = viewId
+
   def receiveRecover: Receive = Map.empty
 
   def receiveCommand: Receive = receiveJournalEvents orElse receiveReads
