@@ -6,7 +6,6 @@ import akka.persistence.query.EventEnvelope
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
-import com.shah.persistence.query.model.QVSSnapshotter.API
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -55,7 +54,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
     offsetForNextFetch += 1
 
     if (offsetForNextFetch % (snapshotFrequency + 1) == 0) {
-      val offsetUpdated = sequenceSnapshotterRef ? API.UpdateSequenceNr(offsetForNextFetch)
+      val offsetUpdated = sequenceSnapshotterRef ? QVSApi.UpdateSequenceNr(offsetForNextFetch)
 
       offsetUpdated onComplete {
         case Success(_)      ⇒
@@ -87,7 +86,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
     case RecoveryCompleted =>
       for {
-        API.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
+        QVSApi.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
       } {
         offsetForNextFetch = sequenceNr
       }
