@@ -20,8 +20,6 @@ trait QueryViewInfo {
 
   def queryId: String
 
-  def persistenceId: String = viewId
-
   protected var queryStreamStarted = false
 
   protected var offsetForNextFetch: Long = 1
