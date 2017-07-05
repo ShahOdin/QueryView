@@ -46,8 +46,7 @@ class AccountView(implicit override val data: ClassTag[Float]) extends Actor wit
   var cachedData: Float = 0L
 }
 
-class AccountViewImpl(override val snapshotFrequency: Int)
-                     (implicit override val ec: ExecutionContext)
+class AccountViewImpl(override val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
   extends AccountView with QueryViewImpl with LeveldBQuerySupport {
   val materializer = ActorMaterializer()
 }
@@ -55,7 +54,7 @@ class AccountViewImpl(override val snapshotFrequency: Int)
 object AccountView {
   val API = AccountViewApi
 
-  def props(snapshotFrequency: Int)(implicit data: ClassTag[Float], ec: ExecutionContext) =
+  def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
     Props(new AccountViewImpl(snapshotFrequency))
 
   val identifier: String = "AccountView"
