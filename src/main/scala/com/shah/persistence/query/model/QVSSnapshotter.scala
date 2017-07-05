@@ -9,12 +9,11 @@ object QVSApi {
   case class UpdateSequenceNr(from: Long)
   case object GetLastSnapshottedSequenceNr
 
-  //"events" ?
+  //responses
   case class QuerryOffset(from:Long)
   case object OffsetUpdated
 
-  def props(viewId:String): Props =
-    Props(new QVSSnapshotter(viewId))
+  def props(viewId:String): Props = Props(new QVSSnapshotter(viewId))
 
 }
 
