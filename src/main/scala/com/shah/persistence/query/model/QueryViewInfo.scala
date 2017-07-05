@@ -25,9 +25,11 @@ trait QueryViewInfo {
   protected var offsetForNextFetch: Long = 1
 
   type Data
+  def cachedData: Data
+  def updateCachedData(updatedData: Data) : Unit
 
-  var cachedData: Data
   implicit val data: ClassTag[Data]
+
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
@@ -80,7 +82,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
   def receiveQueryViewSnapshot: Receive = {
     case SnapshotOffer(_, data(cache)) =>
-      cachedData = cache
+      updateCachedData(cache)
 
     case RecoveryCompleted =>
       for {
@@ -90,6 +92,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
       }
       self ! StartQueryStream
   }
+
 }
 
 case object StartQueryStream
