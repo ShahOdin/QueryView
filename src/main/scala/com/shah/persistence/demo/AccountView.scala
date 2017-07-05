@@ -42,7 +42,7 @@ class AccountView extends Actor with QueryViewBase {
     case RejectedTransaction(_, _, _) ⇒
   }
 
-  override def receiveCommand: Receive = updateCache orElse handleReads
+  def receiveCommand: Receive = updateCache orElse handleReads
 }
 
 class AccountViewImpl(override val snapshotFrequency: Int)
