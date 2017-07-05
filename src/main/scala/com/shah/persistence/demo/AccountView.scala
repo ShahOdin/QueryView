@@ -23,12 +23,12 @@ class AccountView(implicit val data: ClassTag[Float]) extends QueryViewBase {
 
   def queryId: String = Account.identifier
 
-  def handleReads: Receive = {
+  def receiveReads: Receive = {
     case API.ReadAccountBalance ⇒
       println(s"Account balance: $cachedData")
   }
 
-  def updateCache: Receive = {
+  def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, CR) ⇒
       cachedData += amount
       println(s"+Read  side balance: $cachedData")
@@ -40,8 +40,6 @@ class AccountView(implicit val data: ClassTag[Float]) extends QueryViewBase {
 
     case RejectedTransaction(_, _, _) ⇒
   }
-
-  def receiveCommand: Receive = updateCache orElse handleReads
 
   override type Data = Float
   var cachedData: Float = 0L
