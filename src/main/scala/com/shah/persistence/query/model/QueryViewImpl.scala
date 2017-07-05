@@ -4,12 +4,12 @@ import akka.persistence.PersistentActor
 
 //Persistent Actors can mix-in this trait to specify the main logic of the read actor.
 //the client should not have to specify the receiveRecover block.
-trait QueryViewBase extends PersistentActor with QueryViewInfo{
+trait QueryViewBase extends PersistentActor with QueryViewInfo {
   def receiveRecover: Receive = Map.empty
 }
 
 //The view actors need to mix-in this to get the pipelines working together.
-trait QueryViewImpl[D] extends QueryViewImplBase[D]{
+trait QueryViewImpl[D] extends QueryViewImplBase[D] {
 
   override def receiveRecover: Receive = receiveQueryViewSnapshot
 

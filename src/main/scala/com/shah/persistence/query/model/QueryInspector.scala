@@ -9,7 +9,7 @@ case class PrintEvents(persistenceId: String,
                        fromSequenceNr: Long = 0L,
                        toSequenceNr: Long = Long.MaxValue)
 
-trait QueryInspector extends Actor with ActorLogging{
+trait QueryInspector extends Actor with ActorLogging {
 
   implicit val materializer = ActorMaterializer()
 
@@ -18,8 +18,8 @@ trait QueryInspector extends Actor with ActorLogging{
 
   override def receive: Receive = {
     case PrintEvents(id, from, to) ⇒
-      queryJournal(id,from, to).runWith(Sink.actorRef(self, None))
+      queryJournal(id, from, to).runWith(Sink.actorRef(self, None))
 
-    case evt:EventEnvelope ⇒ log.info(s"event: $evt")
+    case evt: EventEnvelope ⇒ log.info(s"event: $evt")
   }
 }

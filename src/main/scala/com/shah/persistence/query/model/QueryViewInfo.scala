@@ -18,6 +18,7 @@ import scala.util.{Failure, Success}
 trait QueryViewInfo {
 
   def viewId: String
+
   def queryId: String
 
   def persistenceId: String = viewId
@@ -28,14 +29,15 @@ trait QueryViewInfo {
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
-trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryViewInfo{
+trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryViewInfo {
   implicit val materializer: ActorMaterializer
 
   implicit val ec: ExecutionContext
   implicit val timeout = Timeout(3 seconds)
 
-  val snapshotFrequency:Int
+  val snapshotFrequency: Int
   val sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
+
   def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
 
   var cachedData: D
@@ -49,12 +51,11 @@ trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryV
   def bookKeeping(): Unit = {
     offsetForNextFetch += 1
 
-    if (offsetForNextFetch % (snapshotFrequency+1) == 0)
-    {
+    if (offsetForNextFetch % (snapshotFrequency + 1) == 0) {
       val offsetUpdated = sequenceSnapshotterRef ? API.UpdateSequenceNr(offsetForNextFetch)
 
-      offsetUpdated onComplete{
-        case Success(_) ⇒
+      offsetUpdated onComplete {
+        case Success(_)      ⇒
           saveSnapshot(cachedData)
         case Failure(reason) ⇒
           log.info(s"QueryView failed with reason: $reason")
@@ -64,26 +65,25 @@ trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryV
   }
 
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
-    case StartQueryStream ⇒
-      if(!queryStreamStarted)
-      {
-        queryStreamStarted=true
-        val events= queryJournalFrom(queryId, offsetForNextFetch)
+    case StartQueryStream              ⇒
+      if (!queryStreamStarted) {
+        queryStreamStarted = true
+        val events = queryJournalFrom(queryId, offsetForNextFetch)
         events.map(self ! _).runWith(Sink.ignore)
       }
-    case EventEnvelope(_,_,_,event) ⇒
+    case EventEnvelope(_, _, _, event) ⇒
       bookKeeping()
       event
-    case readEvent ⇒
+    case readEvent                     ⇒
       readEvent //pass them on to the class mixing the trait.
   }
 
-  def receiveQueryViewSnapshot : Receive = {
+  def receiveQueryViewSnapshot: Receive = {
     case SnapshotOffer(_, data(cache)) =>
       cachedData = cache
 
     case RecoveryCompleted =>
-      for{
+      for {
         API.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
       } {
         offsetForNextFetch = sequenceNr

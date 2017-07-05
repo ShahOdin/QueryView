@@ -28,7 +28,7 @@ object AccountQueryApp extends App {
 }
 
 //inspects and prints the events on the journal relating to a persistent Actor
-object AccountInspectApp extends App{
+object AccountInspectApp extends App {
 
   val system: ActorSystem = ActorSystem("AccountInspectApp")
 
