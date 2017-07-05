@@ -1,7 +1,7 @@
 package com.shah.persistence.query.model
 
 import akka.actor.{ActorLogging, ActorRef}
-import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
+import akka.persistence.{RecoveryCompleted, SnapshotOffer, Snapshotter}
 import akka.persistence.query.EventEnvelope
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -34,7 +34,8 @@ trait QueryViewInfo {
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
-trait QueryViewImplBase extends PersistentActor with ActorLogging with QueryViewInfo {
+trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo {
+
   implicit val materializer: ActorMaterializer
 
   implicit val ec: ExecutionContext

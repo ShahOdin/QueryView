@@ -1,9 +1,10 @@
 package com.shah.persistence.demo
 
 import akka.actor.{Actor, Props}
+import akka.persistence.PersistentActor
 import akka.stream.ActorMaterializer
 import com.shah.persistence.demo.Account._
-import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewImpl, QueryViewBase}
+import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -14,7 +15,7 @@ object AccountViewApi {
 
 }
 
-class AccountView(implicit override val data: ClassTag[Float]) extends Actor with QueryViewBase {
+class AccountView(implicit val data: ClassTag[Float]) extends QueryViewBase {
 
   import AccountView._
 
