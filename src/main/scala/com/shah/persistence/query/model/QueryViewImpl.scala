@@ -2,14 +2,13 @@ package com.shah.persistence.query.model
 
 import akka.persistence.PersistentActor
 
-//Persistent Actors can mix-in this trait to specify the main logic of the read actor.
-//the client should not have to specify the receiveRecover block.
-trait QueryViewBase extends PersistentActor with QueryViewInfo{
+//The view Persistent Actors can mix-in this trait to specify the main logic of the view actor.
+trait QueryViewBase extends PersistentActor with QueryViewInfo {
   def receiveRecover: Receive = Map.empty
 }
 
-//The view actors need to mix-in this to get the pipelines working together.
-trait QueryViewImpl[D] extends QueryViewImplBase[D]{
+//The view actor implementations need to mix-in this to get the pipelines working together.
+trait QueryViewImpl extends QueryViewImplBase {
 
   override def receiveRecover: Receive = receiveQueryViewSnapshot
 

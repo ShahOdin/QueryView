@@ -7,14 +7,15 @@ object QVSApi {
 
   //commands
   case class UpdateSequenceNr(from: Long)
+
   case object GetLastSnapshottedSequenceNr
 
-  //"events" ?
-  case class QuerryOffset(from:Long)
+  //responses
+  case class QuerryOffset(from: Long)
+
   case object OffsetUpdated
 
-  def props(viewId:String): Props =
-    Props(new QVSSnapshotter(viewId))
+  def props(viewId: String): Props = Props(new QVSSnapshotter(viewId))
 
 }
 
@@ -24,14 +25,14 @@ object QVSSnapshotter {
 }
 
 // QVS: QueryViewSequence
-class QVSSnapshotter(viewId:String) extends PersistentActor{
+class QVSSnapshotter(viewId: String) extends PersistentActor {
+
   import QVSSnapshotter._
 
-  private var offsetForNextFetch: Long= 1L
-  private var incrementsSinceLastSnapshot: Int= 0
+  private var offsetForNextFetch: Long = 1L
 
   override def receiveRecover: Receive = {
-    case SnapshotOffer(_, nextOffset:Long) ⇒
+    case SnapshotOffer(_, nextOffset: Long) ⇒
       offsetForNextFetch = nextOffset
   }
 
@@ -41,9 +42,11 @@ class QVSSnapshotter(viewId:String) extends PersistentActor{
       sender() ! API.QuerryOffset(offsetForNextFetch)
 
     case API.UpdateSequenceNr(from: Long) ⇒
-      offsetForNextFetch = from
-      saveSnapshot(offsetForNextFetch)
-      sender()! API.OffsetUpdated
+      if (from > 1L) {
+        offsetForNextFetch = from
+        saveSnapshot(offsetForNextFetch)
+        sender() ! API.OffsetUpdated
+      }
   }
 
   override def persistenceId: String = viewId + IdSuffix
