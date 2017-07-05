@@ -8,7 +8,7 @@ trait QueryViewBase extends PersistentActor with QueryViewInfo {
 }
 
 //The view actor implementations need to mix-in this to get the pipelines working together.
-trait QueryViewImpl[D] extends QueryViewImplBase[D] {
+trait QueryViewImpl extends QueryViewImplBase {
 
   override def receiveRecover: Receive = receiveQueryViewSnapshot
 

@@ -26,10 +26,15 @@ trait QueryViewInfo {
   protected var queryStreamStarted = false
 
   protected var offsetForNextFetch: Long = 1
+
+  type Data
+
+  var cachedData: Data
+  implicit val data: ClassTag[Data]
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
-trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryViewInfo {
+trait QueryViewImplBase extends PersistentActor with ActorLogging with QueryViewInfo {
   implicit val materializer: ActorMaterializer
 
   implicit val ec: ExecutionContext
@@ -39,9 +44,6 @@ trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryV
   val sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
 
   def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
-
-  var cachedData: D
-  implicit val data: ClassTag[D]
 
   def unhandledCommand: Receive = {
     case event ⇒

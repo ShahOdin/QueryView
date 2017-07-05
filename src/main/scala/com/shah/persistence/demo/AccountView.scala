@@ -14,15 +14,13 @@ object AccountViewApi {
 
 }
 
-class AccountView extends Actor with QueryViewBase {
+class AccountView(implicit override val data: ClassTag[Float]) extends Actor with QueryViewBase {
 
   import AccountView._
 
   def viewId: String = AccountView.identifier
 
   def queryId: String = Account.identifier
-
-  var cachedData: Float = 0L
 
   def handleReads: Receive = {
     case API.ReadAccountBalance ⇒
@@ -43,11 +41,14 @@ class AccountView extends Actor with QueryViewBase {
   }
 
   def receiveCommand: Receive = updateCache orElse handleReads
+
+  override type Data = Float
+  var cachedData: Float = 0L
 }
 
 class AccountViewImpl(override val snapshotFrequency: Int)
-                     (implicit override val data: ClassTag[Float], override val ec: ExecutionContext)
-  extends AccountView with QueryViewImpl[Float] with LeveldBQuerySupport {
+                     (implicit override val ec: ExecutionContext)
+  extends AccountView with QueryViewImpl with LeveldBQuerySupport {
   val materializer = ActorMaterializer()
 }
 
