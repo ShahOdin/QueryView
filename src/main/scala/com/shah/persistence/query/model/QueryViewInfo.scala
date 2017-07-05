@@ -24,11 +24,13 @@ trait QueryViewInfo {
 
   protected var offsetForNextFetch: Long = 1
 
-  type Data
-  def cachedData: Data
-  def updateCachedData(updatedData: Data) : Unit
+  type SnapshotData
 
-  implicit val data: ClassTag[Data]
+  def saveSnapshot(): Unit
+
+  def applySnapshot(updatedData: SnapshotData): Unit
+
+  implicit val snapshotData: ClassTag[SnapshotData]
 
 }
 
@@ -58,7 +60,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
       offsetUpdated onComplete {
         case Success(_)      ⇒
-          saveSnapshot(cachedData)
+          saveSnapshot()
         case Failure(reason) ⇒
           log.info(s"QueryView failed with reason: $reason")
           context.stop(self)
@@ -81,8 +83,8 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   }
 
   def receiveQueryViewSnapshot: Receive = {
-    case SnapshotOffer(_, data(cache)) =>
-      updateCachedData(cache)
+    case SnapshotOffer(_, snapshotData(cache)) =>
+      applySnapshot(cache)
 
     case RecoveryCompleted =>
       for {

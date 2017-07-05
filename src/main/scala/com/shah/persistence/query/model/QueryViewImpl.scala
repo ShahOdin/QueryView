@@ -12,7 +12,7 @@ trait QueryViewBase extends PersistentActor with QueryViewInfo {
 
   def receiveRecover: Receive = Map.empty
 
-  def receiveCommand: Receive = receiveJournalEvents orElse receiveReads
+  def receiveCommand: Receive = receiveReads orElse receiveJournalEvents
 
   def receiveJournalEvents: Receive
 

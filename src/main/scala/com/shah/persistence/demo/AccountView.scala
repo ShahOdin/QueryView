@@ -14,7 +14,7 @@ object AccountViewApi {
 
 }
 
-class AccountView(implicit val data: ClassTag[Float]) extends QueryViewBase {
+class AccountView(implicit val snapshotData: ClassTag[Float]) extends QueryViewBase {
 
   import AccountView._
 
@@ -24,29 +24,34 @@ class AccountView(implicit val data: ClassTag[Float]) extends QueryViewBase {
 
   def receiveReads: Receive = {
     case API.ReadAccountBalance ⇒
-      println(s"Account balance: $cachedData")
+      println(s"Account balance: $balance")
   }
 
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, CR) ⇒
       balance += amount
-      println(s"+Read  side balance: $cachedData")
+      println(s"+Read  side balance: $balance")
     case AcceptedTransaction(amount, DR) ⇒
-      val newAmount = cachedData - amount
+      val newAmount = balance - amount
       if (newAmount > 0)
         balance = newAmount
-      println(s"-Read  side balance: $cachedData")
+      println(s"-Read  side balance: $balance")
 
     case RejectedTransaction(_, _, _) ⇒
   }
 
-  override type Data = Float
+  override type SnapshotData = Float
+
   var balance: Float = 0L
 
-  override def updateCachedData(updatedBalance: Float) = {
+  def applySnapshot(updatedBalance: Float) = {
     balance = updatedBalance
   }
-  override def cachedData: Float = balance
+
+  override def saveSnapshot(): Unit = {
+    saveSnapshot(balance)
+  }
+
 }
 
 class AccountViewImpl(val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
