@@ -28,7 +28,6 @@ class QVSSnapshotter(viewId:String) extends PersistentActor{
   import QVSSnapshotter._
 
   private var offsetForNextFetch: Long= 1L
-  private var incrementsSinceLastSnapshot: Int= 0
 
   override def receiveRecover: Receive = {
     case SnapshotOffer(_, nextOffset:Long) ⇒
@@ -41,9 +40,11 @@ class QVSSnapshotter(viewId:String) extends PersistentActor{
       sender() ! API.QuerryOffset(offsetForNextFetch)
 
     case API.UpdateSequenceNr(from: Long) ⇒
-      offsetForNextFetch = from
-      saveSnapshot(offsetForNextFetch)
-      sender()! API.OffsetUpdated
+      if(from > 1L){
+        offsetForNextFetch = from
+        saveSnapshot(offsetForNextFetch)
+        sender()! API.OffsetUpdated
+      }
   }
 
   override def persistenceId: String = viewId + IdSuffix

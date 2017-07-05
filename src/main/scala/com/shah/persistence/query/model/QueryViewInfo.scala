@@ -1,6 +1,6 @@
 package com.shah.persistence.query.model
 
-import akka.actor.ActorRef
+import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import akka.persistence.query.EventEnvelope
 import akka.stream.ActorMaterializer
@@ -11,6 +11,7 @@ import com.shah.persistence.query.model.QVSSnapshotter.API
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 import akka.pattern.ask
+
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
@@ -27,7 +28,7 @@ trait QueryViewInfo {
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
-trait QueryViewImplBase[D] extends PersistentActor with QueryViewInfo{
+trait QueryViewImplBase[D] extends PersistentActor with ActorLogging with QueryViewInfo{
   implicit val materializer: ActorMaterializer
 
   implicit val ec: ExecutionContext
@@ -42,7 +43,7 @@ trait QueryViewImplBase[D] extends PersistentActor with QueryViewInfo{
 
   def unhandledCommand: Receive = {
     case event ⇒
-      println(s"un-caught event: $event")
+      log.debug(s"un-caught event: $event")
   }
 
   def bookKeeping(): Unit = {
@@ -53,9 +54,10 @@ trait QueryViewImplBase[D] extends PersistentActor with QueryViewInfo{
       val offsetUpdated = sequenceSnapshotterRef ? API.UpdateSequenceNr(offsetForNextFetch)
 
       offsetUpdated onComplete{
-        case Success(v) ⇒
+        case Success(_) ⇒
           saveSnapshot(cachedData)
-        case Failure(t) ⇒
+        case Failure(reason) ⇒
+          log.info(s"QueryView failed with reason: $reason")
           context.stop(self)
       }
     }

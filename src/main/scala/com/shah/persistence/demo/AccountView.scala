@@ -50,8 +50,8 @@ class AccountViewImpl(override val snapshotFrequency: Int)
 object AccountView {
   val API= AccountViewApi
 
-  def props(snapshotFrequency: Int)(implicit data: ClassTag[Float], ec: ExecutionContext)
-  =  Props(new AccountViewImpl(snapshotFrequency))
+  def props(snapshotFrequency: Int)(implicit data: ClassTag[Float], ec: ExecutionContext)=
+    Props(new AccountViewImpl(snapshotFrequency))
 
   val identifier: String = "AccountView"
 }
