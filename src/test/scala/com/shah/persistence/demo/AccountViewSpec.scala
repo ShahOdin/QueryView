@@ -28,7 +28,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
   }
 
   override def afterEach() = {
-    deleteDirectory("target")
+    deleteDirectory("target/example")
     Thread.sleep(2000)
   }
 
