@@ -16,8 +16,8 @@ object AccountQueryApp extends App {
 
   val reader = system.actorOf(AccountView.props(5))
 
-  account ! Operation(400, CR)
-  account ! Operation(200, DR)
+  account ! Operation(1000, CR)
+  account ! Operation(500, DR)
 
   reader ! PrintAccountBalance
   Thread.sleep(3000)

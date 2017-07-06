@@ -75,18 +75,30 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
       readEvent //pass them on to the class mixing the trait.
   }
 
+  def scheduleJournalEvents() ={
+    val events = queryJournalFrom(queryId, offsetForNextFetch)
+    events.map(self ! _).runWith(Sink.ignore)
+  }
+
   def receiveQueryViewSnapshot: Receive = {
     case SnapshotOffer(_, snapshotData(cache)) =>
       applySnapshot(cache)
 
     case RecoveryCompleted =>
-      for {
-        QVSApi.QuerryOffset(sequenceNr) ← sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
-      } {
-        offsetForNextFetch = sequenceNr
+
+      val queryOfsetFuture = sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
+
+      queryOfsetFuture.onComplete{
+        case Success(QVSApi.QuerryOffset(sequenceNr)) ⇒
+          println(s"snapshot: $sequenceNr")
+          offsetForNextFetch = sequenceNr
+          scheduleJournalEvents()
+        case Failure(reason) ⇒
+          log.info(s"offset sequence snapshotter failed to catch up: $reason." +
+            "resorting to manual updating of cache based on all events.")
+          scheduleJournalEvents()
       }
-      val events = queryJournalFrom(queryId, offsetForNextFetch)
-      events.map(self ! _).runWith(Sink.ignore)
+
   }
 
 }
