@@ -11,10 +11,12 @@ case class PrintEvents(persistenceId: String,
 
 trait QueryInspector extends Actor with ActorLogging {
 
+  import akka.NotUsed
+
   implicit val materializer = ActorMaterializer()
 
   def queryJournal(idToQuery: String, fromSequenceNr: Long,
-                   toSequenceNr: Long): Source[EventEnvelope, Unit]
+                   toSequenceNr: Long): Source[EventEnvelope, NotUsed]
 
   override def receive: Receive = {
     case PrintEvents(id, from, to) ⇒

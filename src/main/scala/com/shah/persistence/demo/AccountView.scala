@@ -10,7 +10,9 @@ import scala.reflect.ClassTag
 
 object AccountViewApi {
 
-  case object ReadAccountBalance
+  case object PrintAccountBalance
+
+  case object ReturnAccountBalance
 
 }
 
@@ -23,8 +25,11 @@ class AccountView(implicit val snapshotData: ClassTag[Float]) extends QueryViewB
   def queryId: String = Account.identifier
 
   def receiveReads: Receive = {
-    case API.ReadAccountBalance ⇒
+    case API.PrintAccountBalance ⇒
       println(s"Account balance: $balance")
+
+    case API.ReturnAccountBalance ⇒
+      sender() ! balance
   }
 
   def receiveJournalEvents: Receive = {

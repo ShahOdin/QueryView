@@ -37,6 +37,8 @@ trait QueryViewInfo {
 //This needs to be mixed in to create and enable the pipelines to be assembled.
 trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo {
 
+  import akka.NotUsed
+
   implicit val materializer: ActorMaterializer
 
   implicit val ec: ExecutionContext
@@ -45,7 +47,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   val snapshotFrequency: Int
   val sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
 
-  def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, Unit]
+  def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, NotUsed]
 
   def unhandledCommand: Receive = {
     case event ⇒

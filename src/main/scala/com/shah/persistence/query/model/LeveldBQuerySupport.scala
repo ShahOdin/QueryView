@@ -7,14 +7,16 @@ import akka.stream.scaladsl.Source
 
 trait LeveldBQuerySupport extends Actor {
 
+  import akka.NotUsed
+
   def queryJournal(idToQuery: String, fromSequenceNr: Long = 0L,
                    toSequenceNr: Long = Long.MaxValue):
-  Source[EventEnvelope, Unit] = {
+  Source[EventEnvelope, NotUsed] = {
     PersistenceQuery(context.system).
       readJournalFor[LeveldbReadJournal](LeveldbReadJournal.Identifier).
       eventsByPersistenceId(idToQuery, fromSequenceNr, toSequenceNr)
   }
 
   def queryJournalFrom(idToQuery: String, fromSequenceNr: Long = 0L)
-  : Source[EventEnvelope, Unit] = queryJournal(idToQuery, fromSequenceNr, Long.MaxValue)
+  : Source[EventEnvelope, NotUsed] = queryJournal(idToQuery, fromSequenceNr, Long.MaxValue)
 }
