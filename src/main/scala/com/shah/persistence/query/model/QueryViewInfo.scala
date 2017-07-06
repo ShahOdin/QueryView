@@ -86,15 +86,17 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
     case RecoveryCompleted =>
 
-      val queryOfsetFuture = sequenceSnapshotterRef ? QVSApi.GetLastSnapshottedSequenceNr
+      import com.shah.persistence.query.model.QVSApi._
+      val queryOfsetFuture = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
 
       queryOfsetFuture.onComplete{
-        case Success(QVSApi.QuerryOffset(sequenceNr)) ⇒
+        case Success(QuerryOffset(sequenceNr)) ⇒
           offsetForNextFetch = sequenceNr
           scheduleJournalEvents()
+
         case Failure(reason) ⇒
           log.info(s"offset sequence snapshotter failed to catch up: $reason." +
-            "resorting to manual updating of cache based on all events.")
+            " Resorting to manual updating of cache based on all events.")
           scheduleJournalEvents()
       }
 
