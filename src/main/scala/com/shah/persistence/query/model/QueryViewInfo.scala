@@ -90,7 +90,6 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
       queryOfsetFuture.onComplete{
         case Success(QVSApi.QuerryOffset(sequenceNr)) ⇒
-          println(s"snapshot: $sequenceNr")
           offsetForNextFetch = sequenceNr
           scheduleJournalEvents()
         case Failure(reason) ⇒
