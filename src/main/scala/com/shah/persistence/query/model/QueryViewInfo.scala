@@ -20,8 +20,6 @@ trait QueryViewInfo {
 
   def queryId: String
 
-  protected var queryStreamStarted = false
-
   protected var offsetForNextFetch: Long = 1
 
   type SnapshotData
@@ -57,9 +55,8 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   def bookKeeping(): Unit = {
     offsetForNextFetch += 1
 
-    if (offsetForNextFetch % (snapshotFrequency + 1) == 0) {
+    if (offsetForNextFetch % snapshotFrequency == 0) {
       val offsetUpdated = sequenceSnapshotterRef ? QVSApi.UpdateSequenceNr(offsetForNextFetch)
-
       offsetUpdated onComplete {
         case Success(_)      ⇒
           saveSnapshot()
@@ -71,12 +68,6 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   }
 
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
-    case StartQueryStream              ⇒
-      if (!queryStreamStarted) {
-        queryStreamStarted = true
-        val events = queryJournalFrom(queryId, offsetForNextFetch)
-        events.map(self ! _).runWith(Sink.ignore)
-      }
     case EventEnvelope(_, _, _, event) ⇒
       bookKeeping()
       event
@@ -94,10 +85,8 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
       } {
         offsetForNextFetch = sequenceNr
       }
-      self ! StartQueryStream
+      val events = queryJournalFrom(queryId, offsetForNextFetch)
+      events.map(self ! _).runWith(Sink.ignore)
   }
 
 }
-
-case object StartQueryStream
-

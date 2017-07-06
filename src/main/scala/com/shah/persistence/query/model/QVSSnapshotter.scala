@@ -42,7 +42,7 @@ class QVSSnapshotter(viewId: String) extends PersistentActor {
       sender() ! API.QuerryOffset(offsetForNextFetch)
 
     case API.UpdateSequenceNr(from: Long) ⇒
-      if (from > 1L) {
+      if (from > offsetForNextFetch) {
         offsetForNextFetch = from
         saveSnapshot(offsetForNextFetch)
         sender() ! API.OffsetUpdated
