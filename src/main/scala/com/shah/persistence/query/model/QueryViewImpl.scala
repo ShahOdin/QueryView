@@ -1,12 +1,17 @@
 package com.shah.persistence.query.model
 
 import akka.persistence.PersistentActor
+
+import scala.reflect.ClassTag
 //This is the PersistentView implementation of the read side.
 //One could potentially have a PersistentFSM implementation of
 // these two classes. the need for this use case is debatable.
 
 //The view Persistent Actors can mix-in this trait to specify the main logic of the view actor.
-trait QueryViewBase extends PersistentActor with QueryViewInfo {
+abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
+  extends PersistentActor with QueryViewInfo {
+
+  type SnapshotData = D
 
   def persistenceId: String = viewId
 

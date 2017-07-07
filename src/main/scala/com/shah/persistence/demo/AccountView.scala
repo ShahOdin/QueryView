@@ -16,7 +16,7 @@ object AccountViewApi {
 
 }
 
-class AccountView(implicit val snapshotData: ClassTag[Float]) extends QueryViewBase {
+class AccountView extends QueryViewBase[Float] {
 
   import AccountView._
 
@@ -45,18 +45,15 @@ class AccountView(implicit val snapshotData: ClassTag[Float]) extends QueryViewB
     case RejectedTransaction(_, _, _) ⇒
   }
 
-  override type SnapshotData = Float
-
   var balance: Float = 0L
+
+  def saveSnapshot(): Unit = {
+    saveSnapshot(balance)
+  }
 
   def applySnapshot(updatedBalance: Float) = {
     balance = updatedBalance
   }
-
-  override def saveSnapshot(): Unit = {
-    saveSnapshot(balance)
-  }
-
 }
 
 class AccountViewImpl(val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
