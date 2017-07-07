@@ -12,6 +12,7 @@ import scala.concurrent.duration._
 import scalax.file.Path
 
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import com.shah.persistence.demo.TestUtils.Mock
 
 class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitSender
   with WordSpecLike with Matchers with BeforeAndAfterAll with BeforeAndAfterEach with ScalaFutures {
@@ -27,9 +28,14 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
     Try(path.deleteRecursively(continueOnFailure = false))
   }
 
-  override def afterEach() = {
-    deleteDirectory("target/example")
-    Thread.sleep(2000)
+  override protected def beforeEach(): Unit = {
+    import akka.persistence.inmemory.extension.{InMemoryJournalStorage, InMemorySnapshotStorage, StorageExtension}
+    val tp = TestProbe()
+    tp.send(StorageExtension(system).journalStorage, InMemoryJournalStorage.ClearJournal)
+    tp.expectMsg(akka.actor.Status.Success(""))
+    tp.send(StorageExtension(system).snapshotStorage, InMemorySnapshotStorage.ClearSnapshots)
+    tp.expectMsg(akka.actor.Status.Success(""))
+    super.beforeEach()
   }
 
   def killActors(actors: ActorRef*) = actors.foreach(system.stop)
@@ -44,7 +50,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       account ! Operation(3000, CR)
       account ! Operation(500, DR)
 
-      val reader = system.actorOf(AccountView.props(5))
+      val reader = system.actorOf(Mock.AccountView.props(5))
       Thread.sleep(2000)
       val balance = (reader ? ReturnAccountBalance).mapTo[Float]
       balance.futureValue shouldBe 3500f
@@ -57,7 +63,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       val account = system.actorOf(Props[Account])
       account ! Operation(4000, CR)
 
-      val reader = system.actorOf(AccountView.props(5))
+      val reader = system.actorOf(Mock.AccountView.props(5))
       account ! Operation(3000, CR)
       account ! Operation(500, DR)
       Thread.sleep(2000)
@@ -74,11 +80,11 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
         account ! Operation(4000, CR)
       }
 
-      val reader = system.actorOf(AccountView.props(3))
+      val reader = system.actorOf(Mock.AccountView.props(3))
       Thread.sleep(3000)
       system.stop(reader)
 
-      val resurrectedReader = system.actorOf(AccountView.props(3))
+      val resurrectedReader = system.actorOf(Mock.AccountView.props(3))
       Thread.sleep(1000)
 
       val balance = (resurrectedReader ? ReturnAccountBalance).mapTo[Float]

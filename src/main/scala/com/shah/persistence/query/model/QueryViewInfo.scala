@@ -75,7 +75,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
       readEvent //pass them on to the class mixing the trait.
   }
 
-  def scheduleJournalEvents() ={
+  def scheduleJournalEvents() = {
     val events = queryJournalFrom(queryId, offsetForNextFetch)
     events.map(self ! _).runWith(Sink.ignore)
   }
@@ -89,7 +89,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
       import com.shah.persistence.query.model.QVSApi._
       val queryOfsetFuture = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
 
-      queryOfsetFuture.onComplete{
+      queryOfsetFuture.onComplete {
         case Success(QuerryOffset(sequenceNr)) ⇒
           offsetForNextFetch = sequenceNr
           scheduleJournalEvents()
