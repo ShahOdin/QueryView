@@ -1,8 +1,8 @@
-package com.shah.persistence.demo
+package com.shah.persistence.demo.account
 
 import akka.actor.Props
 import akka.stream.ActorMaterializer
-import com.shah.persistence.demo.Account._
+import com.shah.persistence.demo.account
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
 
 import scala.concurrent.ExecutionContext
@@ -18,6 +18,7 @@ object AccountViewApi {
 class AccountView extends QueryViewBase[Float] {
 
   import AccountView._
+  import Account._
 
   def viewId: String = AccountView.identifier
 

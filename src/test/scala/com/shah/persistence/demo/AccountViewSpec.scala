@@ -6,7 +6,7 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.pattern.ask
 import org.scalatest.concurrent.ScalaFutures
 import akka.actor.ActorSystem
-import com.shah.persistence.demo.Account.{CR, DR, Operation}
+import com.shah.persistence.demo.account.Account._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scalax.file.Path
@@ -37,7 +37,8 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
   "AccountView" should {
 
     "receive existing journal events from the write side." in {
-      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
+      import com.shah.persistence.demo.account.Account
+      import com.shah.persistence.demo.account.AccountViewApi.ReturnAccountBalance
 
       val account = system.actorOf(Props[Account])
       account ! Operation(1000, CR)
@@ -52,7 +53,8 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
     }
 
     "receive the messages being persisted by the write side after it is spawn." in {
-      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
+      import com.shah.persistence.demo.account.Account
+      import com.shah.persistence.demo.account.AccountViewApi.ReturnAccountBalance
 
       val account = system.actorOf(Props[Account])
       account ! Operation(4000, CR)
@@ -67,7 +69,8 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
     }
 
     "snapshot its cache based on the write events." in {
-      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
+      import com.shah.persistence.demo.account.Account
+      import com.shah.persistence.demo.account.AccountViewApi.ReturnAccountBalance
 
       val account = system.actorOf(Props[Account])
       for (i <- 1 to 10) {

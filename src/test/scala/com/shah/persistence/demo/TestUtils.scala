@@ -13,6 +13,7 @@ object TestUtils {
     object AccountView {
 
       import akka.actor.Actor
+      import com.shah.persistence.demo.account.AccountView
 
       trait InMemQuerySupport extends Actor {
 

@@ -1,7 +1,7 @@
-package com.shah.persistence.demo
+package com.shah.persistence.demo.account
 
-import akka.persistence.fsm.PersistentFSM.FSMState
 import akka.persistence.fsm._
+import akka.persistence.fsm.PersistentFSM.FSMState
 
 import scala.reflect._
 

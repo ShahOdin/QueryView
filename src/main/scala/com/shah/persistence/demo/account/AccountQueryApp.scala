@@ -1,14 +1,15 @@
-package com.shah.persistence.demo
+package com.shah.persistence.demo.account
 
 import akka.actor.{ActorSystem, Props}
-import com.shah.persistence.demo.Account.{CR, DR, Operation}
-import com.shah.persistence.demo.AccountViewApi.PrintAccountBalance
 import com.shah.persistence.query.model.{LeveldBInspector, PrintEvents}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 //reads Account events from journal via queries.
 object AccountQueryApp extends App {
+
+  import com.shah.persistence.demo.account.Account._
+  import com.shah.persistence.demo.account.AccountViewApi._
 
   val system: ActorSystem = ActorSystem("AccountQueryApp")
 
