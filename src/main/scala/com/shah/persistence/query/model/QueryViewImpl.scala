@@ -7,7 +7,8 @@ import scala.reflect.ClassTag
 //One could potentially have a PersistentFSM implementation of
 // these two classes. the need for this use case is debatable.
 
-//The view Persistent Actors can mix-in this trait to specify the main logic of the view actor.
+//The view Persistent Actors inherits from this abstract class
+// to provide the resources needed for the Query-view mechanism.
 abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
   extends PersistentActor with QueryViewInfo {
 
