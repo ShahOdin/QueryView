@@ -6,7 +6,6 @@ import com.shah.persistence.demo.Account._
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
 
 import scala.concurrent.ExecutionContext
-import scala.reflect.ClassTag
 
 object AccountViewApi {
 
