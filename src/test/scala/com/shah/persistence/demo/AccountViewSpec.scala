@@ -22,12 +22,6 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
   implicit val duration: Timeout = 5 seconds
 
-  def deleteDirectory(pathS: String): Unit = {
-    import scala.util.Try
-    val path = Path.fromString(pathS)
-    Try(path.deleteRecursively(continueOnFailure = false))
-  }
-
   override protected def beforeEach(): Unit = {
     import akka.persistence.inmemory.extension.{InMemoryJournalStorage, InMemorySnapshotStorage, StorageExtension}
     val tp = TestProbe()
