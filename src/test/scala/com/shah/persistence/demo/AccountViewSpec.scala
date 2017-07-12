@@ -131,7 +131,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       assertEventsQueriedReceived(allEvents, 2)
 
     }
-
+    //fails.
     "'s write actor should have its events queriable with eventsByPersistenceId" in {
       import akka.NotUsed
       import akka.persistence.query.EventEnvelope
