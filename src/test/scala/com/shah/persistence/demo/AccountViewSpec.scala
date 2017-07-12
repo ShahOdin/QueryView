@@ -93,8 +93,8 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       killActors(reader, account)
     }
 
-    def assertEventsQueriedReceived(eventSource:Source[EventEnvelope, NotUsed],
-                                    NumberOfAcceptedTransactions:Int)= {
+    def assertEventsQueriedReceived(eventSource: Source[EventEnvelope, NotUsed],
+                                    NumberOfAcceptedTransactions: Int) = {
       import akka.stream.ActorMaterializer
       implicit val materializer = ActorMaterializer()(system)
       eventSource.runFold {
@@ -116,7 +116,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       readJournalFor[InMemoryReadJournal](InMemoryReadJournal.Identifier).
       eventsByPersistenceId(persistenceId, Long.MinValue, Long.MaxValue)
 
-    "have its events queriable from outside with currentEventsByPersistenceId" in {
+    "'s write actor should have its events queriable with currentEventsByPersistenceId" in {
       import akka.NotUsed
       import akka.persistence.query.EventEnvelope
       import akka.stream.scaladsl.Source
@@ -132,7 +132,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
     }
 
-    "have its events queriable from outside with eventsByPersistenceId" in {
+    "'s write actor should have its events queriable with eventsByPersistenceId" in {
       import akka.NotUsed
       import akka.persistence.query.EventEnvelope
       import akka.stream.scaladsl.Source
