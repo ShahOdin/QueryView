@@ -35,11 +35,10 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
   def killActors(actors: ActorRef*) = actors.foreach(system.stop)
 
-  def allCurrentEventsSource(persistenceId:String)=PersistenceQuery(system).
-    readJournalFor[InMemoryReadJournal](InMemoryReadJournal.Identifier).
-    currentEventsByPersistenceId(persistenceId, Long.MinValue, Long.MaxValue)
-
   "AccountView" should {
+    import akka.NotUsed
+    import akka.persistence.query.EventEnvelope
+    import akka.stream.scaladsl.Source
 
     "receive existing journal events from the write side." in {
       import com.shah.persistence.demo.account.Account
@@ -94,28 +93,59 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       killActors(reader, account)
     }
 
-    "have its events queriable from outside." in {
-      import akka.persistence.query.EventEnvelope
+    def assertEventsQueriedReceived(eventSource:Source[EventEnvelope, NotUsed],
+                                    NumberOfAcceptedTransactions:Int)= {
       import akka.stream.ActorMaterializer
+      implicit val materializer = ActorMaterializer()(system)
+      eventSource.runFold {
+        List[Any]()
+      } {
+        (x: List[Any], y: EventEnvelope) ⇒
+          y.event match {
+            case AcceptedTransaction(_, _) ⇒ y.event :: x
+            case _                         ⇒ x
+          }
+      }.futureValue.length shouldBe NumberOfAcceptedTransactions
+    }
+
+    def allEventsSoFar(persistenceId: String) = PersistenceQuery(system).
+      readJournalFor[InMemoryReadJournal](InMemoryReadJournal.Identifier).
+      currentEventsByPersistenceId(persistenceId, Long.MinValue, Long.MaxValue)
+
+    def allEventsSoFarAndBeyond(persistenceId: String) = PersistenceQuery(system).
+      readJournalFor[InMemoryReadJournal](InMemoryReadJournal.Identifier).
+      eventsByPersistenceId(persistenceId, Long.MinValue, Long.MaxValue)
+
+    "have its events queriable from outside with currentEventsByPersistenceId" in {
+      import akka.NotUsed
+      import akka.persistence.query.EventEnvelope
+      import akka.stream.scaladsl.Source
       import com.shah.persistence.demo.account.Account
 
       val account = system.actorOf(Props[Account])
-
       account ! Operation(4000, CR)
       account ! Operation(4000, CR)
       Thread.sleep(2000)
 
-      implicit val materializer = ActorMaterializer()(system)
+      val allEvents: Source[EventEnvelope, NotUsed] = allEventsSoFar(Account.identifier)
+      assertEventsQueriedReceived(allEvents, 2)
 
-      val events = allCurrentEventsSource(Account.identifier).
-        runFold {List[EventEnvelope]()} {
-          (x: List[EventEnvelope], y: EventEnvelope) ⇒
-            y.event match {
-              case AcceptedTransaction(_,_) ⇒ y::x
-              case _ ⇒ x
-            }
-        }.futureValue
-      events.length shouldBe 2
+    }
+
+    "have its events queriable from outside with eventsByPersistenceId" in {
+      import akka.NotUsed
+      import akka.persistence.query.EventEnvelope
+      import akka.stream.scaladsl.Source
+      import com.shah.persistence.demo.account.Account
+
+      val account = system.actorOf(Props[Account])
+      account ! Operation(4000, CR)
+      account ! Operation(4000, CR)
+      Thread.sleep(2000)
+
+      val allEvents: Source[EventEnvelope, NotUsed] = allEventsSoFarAndBeyond(Account.identifier)
+      assertEventsQueriedReceived(allEvents, 2)
+
     }
   }
 }

@@ -61,7 +61,7 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
 
   import Account._
 
-  override def persistenceId: String = Account.identifier
+  override def persistenceId: String = identifier
 
   override def applyEvent(evt: DomainEvent, currentData: Data): Data = {
     evt match {
@@ -111,6 +111,6 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
   }
 
   onTransition {
-    case _ ⇒ //saveStateSnapshot()
+    case _ ⇒ //println(s"Write side pId: ${5 + "-" + 4}")
   }
 }
