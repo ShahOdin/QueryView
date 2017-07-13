@@ -24,7 +24,7 @@ object AccountQueryApp extends App {
   Thread.sleep(3000)
   reader ! PrintAccountBalance
 
-  Thread.sleep(1000)
+  Thread.sleep(2000)
   system.terminate()
 }
 

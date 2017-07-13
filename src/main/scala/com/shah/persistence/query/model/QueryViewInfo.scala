@@ -32,6 +32,8 @@ trait QueryViewInfo {
 
 }
 
+case object PersistedEventProcessed
+
 //This needs to be mixed in to create and enable the pipelines to be assembled.
 trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo {
 
@@ -68,6 +70,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
     case EventEnvelope(_, _, _, event) ⇒
       bookKeeping()
+      sender() ! PersistedEventProcessed
       event
     case readEvent                     ⇒
       readEvent //pass them on to the class mixing the trait.
@@ -76,7 +79,8 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   def scheduleJournalEvents() = {
     implicit val materializer = ActorMaterializer()
     val events = queryJournalFrom(queryId, offsetForNextFetch)
-    events.map(self ! _).runWith(Sink.ignore)
+    events.mapAsync(parallelism = 5)(elem => (self ? elem).mapTo[com.shah.persistence.query.model.PersistedEventProcessed.type])
+      .runWith(Sink.ignore)
   }
 
   def receiveQueryViewSnapshot: Receive = {
