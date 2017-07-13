@@ -34,9 +34,7 @@ object TestUtils {
       }
 
       class AccountViewMockImpl(val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
-        extends AccountView with QueryViewImpl with InMemQuerySupport {
-        val materializer = ActorMaterializer()
-      }
+        extends AccountView with QueryViewImpl with InMemQuerySupport
 
       def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
         Props(new AccountViewMockImpl(snapshotFrequency))
