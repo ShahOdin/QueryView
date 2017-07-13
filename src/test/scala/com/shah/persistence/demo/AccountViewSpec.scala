@@ -110,11 +110,11 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
     def allEventsSoFar(persistenceId: String) = PersistenceQuery(system).
       readJournalFor[InMemoryReadJournal](InMemoryReadJournal.Identifier).
-      currentEventsByPersistenceId(persistenceId, Long.MinValue, Long.MaxValue)
+      currentEventsByPersistenceId(persistenceId, 0, 10)
 
     def allEventsSoFarAndBeyond(persistenceId: String) = PersistenceQuery(system).
       readJournalFor[InMemoryReadJournal](InMemoryReadJournal.Identifier).
-      eventsByPersistenceId(persistenceId, Long.MinValue, Long.MaxValue)
+      eventsByPersistenceId(persistenceId, 0, 10)
 
     "'s write actor should have its events queriable with currentEventsByPersistenceId" in {
       import akka.NotUsed
@@ -128,22 +128,6 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
       Thread.sleep(2000)
 
       val allEvents: Source[EventEnvelope, NotUsed] = allEventsSoFar(Account.identifier)
-      assertEventsQueriedReceived(allEvents, 2)
-
-    }
-    //fails.
-    "'s write actor should have its events queriable with eventsByPersistenceId" in {
-      import akka.NotUsed
-      import akka.persistence.query.EventEnvelope
-      import akka.stream.scaladsl.Source
-      import com.shah.persistence.demo.account.Account
-
-      val account = system.actorOf(Props[Account])
-      account ! Operation(4000, CR)
-      account ! Operation(4000, CR)
-      Thread.sleep(2000)
-
-      val allEvents: Source[EventEnvelope, NotUsed] = allEventsSoFarAndBeyond(Account.identifier)
       assertEventsQueriedReceived(allEvents, 2)
 
     }

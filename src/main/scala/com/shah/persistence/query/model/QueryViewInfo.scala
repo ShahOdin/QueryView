@@ -37,8 +37,6 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
   import akka.NotUsed
 
-  implicit val materializer: ActorMaterializer
-
   implicit val ec: ExecutionContext
   implicit val timeout = Timeout(3 seconds)
 
@@ -76,6 +74,7 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
   }
 
   def scheduleJournalEvents() = {
+    implicit val materializer = ActorMaterializer()
     val events = queryJournalFrom(queryId, offsetForNextFetch)
     events.map(self ! _).runWith(Sink.ignore)
   }

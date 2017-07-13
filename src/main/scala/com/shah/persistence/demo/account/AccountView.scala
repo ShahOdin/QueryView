@@ -57,9 +57,7 @@ class AccountView extends QueryViewBase[Float] {
 }
 
 class AccountViewImpl(val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
-  extends AccountView with QueryViewImpl with LeveldBQuerySupport {
-  val materializer = ActorMaterializer()
-}
+  extends AccountView with QueryViewImpl with LeveldBQuerySupport
 
 object AccountView {
   val API = AccountViewApi
