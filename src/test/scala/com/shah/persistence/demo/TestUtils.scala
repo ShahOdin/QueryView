@@ -14,8 +14,9 @@ object TestUtils {
 
       import akka.actor.Actor
       import com.shah.persistence.demo.account.AccountView
+      import com.shah.persistence.query.model.ReadJournalQuerySupport
 
-      trait InMemQuerySupport extends Actor {
+      trait InMemQuerySupport extends ReadJournalQuerySupport with Actor {
 
         import akka.NotUsed
         import akka.persistence.query.{EventEnvelope, PersistenceQuery}
@@ -29,7 +30,7 @@ object TestUtils {
             eventsByPersistenceId(idToQuery, fromSequenceNr, toSequenceNr)
         }
 
-        def queryJournalFrom(idToQuery: String, fromSequenceNr: Long = 0L): Source[EventEnvelope, NotUsed] =
+        override def queryJournalFrom(idToQuery: String, fromSequenceNr: Long = 0L): Source[EventEnvelope, NotUsed] =
           queryJournal(idToQuery, fromSequenceNr, Long.MaxValue)
       }
 

@@ -32,14 +32,13 @@ trait QueryViewInfo {
 
 }
 
-case object PersistedEventProcessed
-
 //This needs to be mixed in to create and enable the pipelines to be assembled.
 trait QueryViewImplBase extends Snapshotter
   with ActorLogging with QueryViewInfo with ReadJournalQuerySupport {
 
   implicit val ec: ExecutionContext
   implicit val timeout = Timeout(3 seconds)
+  import QueryViewImplBase._
 
   val snapshotFrequency: Int
   val sequenceSnapshotterRef: ActorRef = context.actorOf(QueryViewSequenceApi.props(viewId))
@@ -103,4 +102,8 @@ trait QueryViewImplBase extends Snapshotter
 
   }
 
+}
+
+object QueryViewImplBase {
+  private[QueryViewImplBase] case object PersistedEventProcessed
 }

@@ -17,8 +17,8 @@ object AccountViewApi {
 
 class AccountView extends QueryViewBase[Float] {
 
-  import AccountView._
   import Account._
+  import com.shah.persistence.demo.{AccountViewApi⇒API}
 
   def viewId: String = AccountView.identifier
 
