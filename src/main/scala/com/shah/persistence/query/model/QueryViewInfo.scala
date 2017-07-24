@@ -35,17 +35,14 @@ trait QueryViewInfo {
 case object PersistedEventProcessed
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
-trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo {
-
-  import akka.NotUsed
+trait QueryViewImplBase extends Snapshotter
+  with ActorLogging with QueryViewInfo with ReadJournalQuerySupport {
 
   implicit val ec: ExecutionContext
   implicit val timeout = Timeout(3 seconds)
 
   val snapshotFrequency: Int
-  val sequenceSnapshotterRef: ActorRef = context.actorOf(QVSApi.props(viewId))
-
-  def queryJournalFrom(idToQuery: String, queryOffset: Long): Source[EventEnvelope, NotUsed]
+  val sequenceSnapshotterRef: ActorRef = context.actorOf(QueryViewSequenceApi.props(viewId))
 
   def unhandledCommand: Receive = {
     case event ⇒
@@ -54,9 +51,9 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
 
   def bookKeeping(): Unit = {
     offsetForNextFetch += 1
-
+    implicit val ec = context.dispatcher
     if (offsetForNextFetch % snapshotFrequency == 0) {
-      val offsetUpdated = sequenceSnapshotterRef ? QVSApi.UpdateSequenceNr(offsetForNextFetch)
+      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(offsetForNextFetch)
       offsetUpdated onComplete {
         case Success(_)      ⇒
           saveSnapshot()
@@ -76,23 +73,24 @@ trait QueryViewImplBase extends Snapshotter with ActorLogging with QueryViewInfo
       readEvent //pass them on to the class mixing the trait.
   }
 
+  val streamParallelism: Int = 5
+
   def scheduleJournalEvents() = {
-    implicit val materializer = ActorMaterializer()
     val events = queryJournalFrom(queryId, offsetForNextFetch)
-    events.mapAsync(parallelism = 5)(elem => (self ? elem).mapTo[com.shah.persistence.query.model.PersistedEventProcessed.type])
+    implicit val materializer = ActorMaterializer()(context.system)
+    events.mapAsync(parallelism = streamParallelism)(elem ⇒ self ? elem)
       .runWith(Sink.ignore)
   }
 
   def receiveQueryViewSnapshot: Receive = {
-    case SnapshotOffer(_, snapshotData(cache)) =>
+    case SnapshotOffer(_, snapshotData(cache)) ⇒
       applySnapshot(cache)
 
-    case RecoveryCompleted =>
-
-      import com.shah.persistence.query.model.QVSApi._
-      val queryOfsetFuture = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
-
-      queryOfsetFuture.onComplete {
+    case RecoveryCompleted ⇒
+      import com.shah.persistence.query.model.QueryViewSequenceApi.{GetLastSnapshottedSequenceNr, QuerryOffset}
+      implicit val ec = context.dispatcher
+      (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr)
+        .mapTo[QuerryOffset].onComplete {
         case Success(QuerryOffset(sequenceNr)) ⇒
           offsetForNextFetch = sequenceNr
           scheduleJournalEvents()

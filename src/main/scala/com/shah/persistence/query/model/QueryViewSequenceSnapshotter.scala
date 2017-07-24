@@ -3,7 +3,11 @@ package com.shah.persistence.query.model
 import akka.actor.Props
 import akka.persistence.{PersistentActor, SnapshotOffer}
 
-object QVSApi {
+object QueryViewSequenceSnapshotter {
+  val IdSuffix = "-SequenceSnapshotter"
+}
+
+package object QueryViewSequenceApi {
 
   //commands
   case class UpdateSequenceNr(from: Long)
@@ -15,19 +19,12 @@ object QVSApi {
 
   case object OffsetUpdated
 
-  def props(viewId: String): Props = Props(new QVSSnapshotter(viewId))
-
+  def props(viewId: String): Props = Props(new QueryViewSequenceSnapshotter(viewId))
 }
 
-object QVSSnapshotter {
-  val API = QVSApi
-  val IdSuffix = "-SequenceSnapshotter"
-}
+class QueryViewSequenceSnapshotter(viewId: String) extends PersistentActor {
 
-// QVS: QueryViewSequence
-class QVSSnapshotter(viewId: String) extends PersistentActor {
-
-  import QVSSnapshotter._
+  import QueryViewSequenceSnapshotter._
 
   private var offsetForNextFetch: Long = 1L
 
@@ -36,19 +33,19 @@ class QVSSnapshotter(viewId: String) extends PersistentActor {
       offsetForNextFetch = nextOffset
   }
 
+  import com.shah.persistence.query.model.QueryViewSequenceApi._
+
   override def receiveCommand: Receive = {
+    case GetLastSnapshottedSequenceNr ⇒
+      sender() ! QuerryOffset(offsetForNextFetch)
 
-    case API.GetLastSnapshottedSequenceNr ⇒
-      sender() ! API.QuerryOffset(offsetForNextFetch)
-
-    case API.UpdateSequenceNr(from: Long) ⇒
+    case UpdateSequenceNr(from: Long) ⇒
       if (from > offsetForNextFetch) {
         offsetForNextFetch = from
         saveSnapshot(offsetForNextFetch)
-        sender() ! API.OffsetUpdated
+        sender() ! OffsetUpdated
       }
   }
 
   override def persistenceId: String = viewId + IdSuffix
 }
-

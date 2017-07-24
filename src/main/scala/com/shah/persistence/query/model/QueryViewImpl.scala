@@ -3,12 +3,10 @@ package com.shah.persistence.query.model
 import akka.persistence.PersistentActor
 
 import scala.reflect.ClassTag
-//This is the PersistentView implementation of the read side.
-//One could potentially have a PersistentFSM implementation of
-// these two classes. the need for this use case is debatable.
+//This is the Persistent-Actor implementation of QueryView.
+//One could potentially have a PersistentFSM implementation of these two entities.
 
-//The view Persistent Actors inherits from this abstract class
-// to provide the resources needed for the Query-view mechanism.
+//The view Persistent-Actors can mix this trait in to specify the building blocks of QueryView.
 abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
   extends PersistentActor with QueryViewInfo {
 
@@ -25,7 +23,7 @@ abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
   def receiveReads: Receive
 }
 
-//The view actor implementations need to mix-in this to get the pipelines working together.
+//The view actors extending QueryViewBase need to mix this in to get the QueryView machinery working.
 trait QueryViewImpl extends PersistentActor with QueryViewImplBase {
 
   override def receiveRecover: Receive = receiveQueryViewSnapshot
