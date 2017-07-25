@@ -16,8 +16,15 @@ package object AccountApi {
 
 package object AccountViewApi {
 
+  import akka.actor.Props
+  import com.shah.persistence.demo.account.AccountViewImpl
+
+  import scala.concurrent.ExecutionContext
+
   case object PrintAccountBalance
 
   case object ReturnAccountBalance
 
+  def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
+    Props(new AccountViewImpl(snapshotFrequency))
 }

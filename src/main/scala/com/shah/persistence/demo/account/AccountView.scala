@@ -1,10 +1,6 @@
 package com.shah.persistence.demo.account
 
-import akka.actor.Props
-import akka.stream.ActorMaterializer
-import com.shah.persistence.demo.account
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
-
 import scala.concurrent.ExecutionContext
 
 class AccountView extends QueryViewBase[Float] {
@@ -24,13 +20,13 @@ class AccountView extends QueryViewBase[Float] {
       sender() ! balance
   }
 
-  import com.shah.persistence.demo.AccountApi._
+  import com.shah.persistence.demo.AccountApi
 
   def receiveJournalEvents: Receive = {
-    case AcceptedTransaction(amount, CR) ⇒
+    case AcceptedTransaction(amount, AccountApi.CR) ⇒
       balance += amount
       println(s"+Read  side balance: $balance")
-    case AcceptedTransaction(amount, DR) ⇒
+    case AcceptedTransaction(amount, AccountApi.DR) ⇒
       val newAmount = balance - amount
       if (newAmount > 0)
         balance = newAmount
@@ -50,13 +46,11 @@ class AccountView extends QueryViewBase[Float] {
   }
 }
 
-class AccountViewImpl(val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
+class AccountViewImpl(val snapshotFrequency: Int)
+                     (implicit override val ec: ExecutionContext)
   extends AccountView with QueryViewImpl with LeveldBQuerySupport
 
 object AccountView {
-
-  def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
-    Props(new AccountViewImpl(snapshotFrequency))
 
   val identifier: String = "AccountView"
 }

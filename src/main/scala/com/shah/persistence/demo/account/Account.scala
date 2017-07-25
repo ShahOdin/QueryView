@@ -7,8 +7,6 @@ import scala.reflect._
 
 object Account {
 
-
-
   val identifier: String = "Account"
 
   // Account States
@@ -22,7 +20,6 @@ object Account {
     override def identifier = "Active"
   }
 
-
   // Account Data
   sealed trait Data {
     val amount: Float
@@ -34,7 +31,6 @@ object Account {
 
   case class Balance(override val amount: Float) extends Data
 
-
   // Domain Events (Persist events)
   sealed trait DomainEvent
   import com.shah.persistence.demo.AccountApi.TransactionType
@@ -44,9 +40,6 @@ object Account {
 
   case class RejectedTransaction(amount: Float,
                                  `type`: TransactionType, reason: String) extends DomainEvent
-
-
-
 }
 
 class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainEvent] {
@@ -103,5 +96,5 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
       else
         stay applying RejectedTransaction(amount, API.DR, "balance doesn't cover this operation.")
   }
-  
+
 }

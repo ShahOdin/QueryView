@@ -42,17 +42,15 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
     "receive existing journal events from the write side." in {
       import com.shah.persistence.demo.account.Account
-      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
-      import com.shah.persistence.demo.AccountApi._
 
       val account = system.actorOf(Props[Account])
-      account ! Operation(1000, CR)
-      account ! Operation(3000, CR)
-      account ! Operation(500, DR)
+      account ! AccountApi.Operation(1000, AccountApi.CR)
+      account ! AccountApi.Operation(3000, AccountApi.CR)
+      account ! AccountApi.Operation(500, AccountApi.DR)
 
       val reader = system.actorOf(Mock.AccountView.props(5))
       Thread.sleep(2000)
-      val balance = (reader ? ReturnAccountBalance).mapTo[Float]
+      val balance = (reader ? AccountViewApi.ReturnAccountBalance).mapTo[Float]
       balance.futureValue shouldBe 3500f
       killActors(reader, account)
     }
