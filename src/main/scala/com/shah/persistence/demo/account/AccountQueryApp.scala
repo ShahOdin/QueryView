@@ -8,8 +8,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 //reads Account events from journal via queries.
 object AccountQueryApp extends App {
 
-  import com.shah.persistence.demo.account.Account._
   import com.shah.persistence.demo.AccountViewApi._
+  import com.shah.persistence.demo.AccountApi._
 
   val system: ActorSystem = ActorSystem("AccountQueryApp")
 

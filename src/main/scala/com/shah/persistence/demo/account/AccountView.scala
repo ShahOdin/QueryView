@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 class AccountView extends QueryViewBase[Float] {
 
   import Account._
-  import com.shah.persistence.demo.{AccountViewApi⇒API}
+  import com.shah.persistence.demo.{AccountViewApi ⇒ API}
 
   def viewId: String = AccountView.identifier
 
@@ -23,6 +23,8 @@ class AccountView extends QueryViewBase[Float] {
     case API.ReturnAccountBalance ⇒
       sender() ! balance
   }
+
+  import com.shah.persistence.demo.AccountApi._
 
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, CR) ⇒

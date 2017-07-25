@@ -7,6 +7,8 @@ import scala.reflect._
 
 object Account {
 
+
+
   val identifier: String = "Account"
 
   // Account States
@@ -35,6 +37,7 @@ object Account {
 
   // Domain Events (Persist events)
   sealed trait DomainEvent
+  import com.shah.persistence.demo.AccountApi.TransactionType
 
   case class AcceptedTransaction(amount: Float,
                                  `type`: TransactionType) extends DomainEvent
@@ -42,17 +45,6 @@ object Account {
   case class RejectedTransaction(amount: Float,
                                  `type`: TransactionType, reason: String) extends DomainEvent
 
-  // Transaction Types
-  sealed trait TransactionType
-
-  case object CR extends TransactionType
-
-  case object DR extends TransactionType
-
-
-  // Commands
-
-  case class Operation(amount: Float, `type`: TransactionType)
 
 
 }
@@ -60,16 +52,17 @@ object Account {
 class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainEvent] {
 
   import Account._
+  import com.shah.persistence.demo.{AccountApi⇒API}
 
   override def persistenceId: String = identifier
 
   override def applyEvent(evt: DomainEvent, currentData: Data): Data = {
     evt match {
-      case AcceptedTransaction(amount, CR)   =>
+      case AcceptedTransaction(amount, API.CR)   =>
         val newAmount = currentData.amount + amount
         println(s"Write side balance: $newAmount")
         Balance(currentData.amount + amount)
-      case AcceptedTransaction(amount, DR)   =>
+      case AcceptedTransaction(amount, API.DR)   =>
         val newAmount = currentData.amount - amount
         println(s"Write side balance: $newAmount")
         if (newAmount > 0)
@@ -87,30 +80,28 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
   startWith(Empty, ZeroBalance)
 
   when(Empty) {
-    case Event(Operation(amount, CR), _) =>
+    //import com.shah.persistence.demo.AccountApi.Operation
+    case Event(API.Operation(amount, API.CR), _) =>
       println(s"Hi, It's your first Credit Operation.")
-      goto(Active) applying AcceptedTransaction(amount, CR)
-    case Event(Operation(amount, DR), _) =>
+      goto(Active) applying AcceptedTransaction(amount, API.CR)
+    case Event(API.Operation(amount, API.DR), _) =>
       println(s"Sorry your account has zero balance.")
-      stay applying RejectedTransaction(amount, DR, "Balance is Zero")
+      stay applying RejectedTransaction(amount, API.DR, "Balance is Zero")
   }
 
   when(Active) {
-    case Event(Operation(amount, CR), _)       =>
-      stay applying AcceptedTransaction(amount, CR)
-    case Event(Operation(amount, DR), balance) =>
+    case Event(API.Operation(amount, API.CR), _)       =>
+      stay applying AcceptedTransaction(amount, API.CR)
+    case Event(API.Operation(amount, API.DR), balance) =>
       val newBalance = balance.amount - amount
       if (newBalance > 0) {
-        stay applying AcceptedTransaction(amount, DR)
+        stay applying AcceptedTransaction(amount, API.DR)
       }
       else if (newBalance == 0) {
-        goto(Empty) applying AcceptedTransaction(amount, DR)
+        goto(Empty) applying AcceptedTransaction(amount, API.DR)
       }
       else
-        stay applying RejectedTransaction(amount, DR, "balance doesn't cover this operation.")
+        stay applying RejectedTransaction(amount, API.DR, "balance doesn't cover this operation.")
   }
-
-  onTransition {
-    case _ ⇒ //println(s"Write side pId: ${5 + "-" + 4}")
-  }
+  
 }
