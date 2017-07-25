@@ -13,13 +13,12 @@ trait QueryInspector extends Actor with ActorLogging {
 
   import akka.NotUsed
 
-  implicit val materializer = ActorMaterializer()
-
   def queryJournal(idToQuery: String, fromSequenceNr: Long,
                    toSequenceNr: Long): Source[EventEnvelope, NotUsed]
 
   override def receive: Receive = {
     case PrintEvents(id, from, to) ⇒
+      implicit val materializer = ActorMaterializer()
       queryJournal(id, from, to).runWith(Sink.actorRef(self, None))
 
     case evt: EventEnvelope ⇒ log.info(s"event: $evt")
