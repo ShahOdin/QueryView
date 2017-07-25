@@ -7,14 +7,6 @@ import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, Que
 
 import scala.concurrent.ExecutionContext
 
-object AccountViewApi {
-
-  case object PrintAccountBalance
-
-  case object ReturnAccountBalance
-
-}
-
 class AccountView extends QueryViewBase[Float] {
 
   import Account._
@@ -60,7 +52,6 @@ class AccountViewImpl(val snapshotFrequency: Int)(implicit override val ec: Exec
   extends AccountView with QueryViewImpl with LeveldBQuerySupport
 
 object AccountView {
-  val API = AccountViewApi
 
   def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
     Props(new AccountViewImpl(snapshotFrequency))

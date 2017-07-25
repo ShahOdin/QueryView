@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object AccountQueryApp extends App {
 
   import com.shah.persistence.demo.account.Account._
-  import com.shah.persistence.demo.account.AccountViewApi._
+  import com.shah.persistence.demo.AccountViewApi._
 
   val system: ActorSystem = ActorSystem("AccountQueryApp")
 

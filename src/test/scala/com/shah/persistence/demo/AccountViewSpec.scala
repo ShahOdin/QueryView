@@ -42,7 +42,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
     "receive existing journal events from the write side." in {
       import com.shah.persistence.demo.account.Account
-      import com.shah.persistence.demo.account.AccountViewApi._
+      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
 
       val account = system.actorOf(Props[Account])
       account ! Operation(1000, CR)
@@ -58,7 +58,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
     "receive the messages being persisted by the write side after it is spawn." in {
       import com.shah.persistence.demo.account.Account
-      import com.shah.persistence.demo.account.AccountViewApi.ReturnAccountBalance
+      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
 
       val account = system.actorOf(Props[Account])
       account ! Operation(4000, CR)
@@ -74,7 +74,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
     "snapshot its cache based on the write events." in {
       import com.shah.persistence.demo.account.Account
-      import com.shah.persistence.demo.account.AccountViewApi.ReturnAccountBalance
+      import com.shah.persistence.demo.AccountViewApi.ReturnAccountBalance
 
       val account = system.actorOf(Props[Account])
       for (i <- 1 to 10) {
