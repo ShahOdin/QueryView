@@ -91,7 +91,6 @@ trait QueryViewImplBase extends Snapshotter
     case RecoveryCompleted ⇒
       import com.shah.persistence.query.model.QueryViewSequenceApi.{GetLastSnapshottedSequenceNr, QuerryOffset}
 
-      import scala.concurrent.Await
       implicit val ec = context.dispatcher
       val lastSequenceNr = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
       lastSequenceNr onComplete {
@@ -104,7 +103,6 @@ trait QueryViewImplBase extends Snapshotter
             " Resorting to manual updating of cache based on all events.")
           scheduleJournalEvents()
       }
-      Await.result(lastSequenceNr, timeoutDuration)
 
   }
 
