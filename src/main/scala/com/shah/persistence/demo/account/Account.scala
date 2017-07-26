@@ -1,5 +1,6 @@
 package com.shah.persistence.demo.account
 
+import akka.actor.ActorLogging
 import akka.persistence.fsm._
 import akka.persistence.fsm.PersistentFSM.FSMState
 
@@ -33,6 +34,7 @@ object Account {
 
   // Domain Events (Persist events)
   sealed trait DomainEvent
+
   import com.shah.persistence.demo.AccountApi.TransactionType
 
   case class AcceptedTransaction(amount: Float,
@@ -40,30 +42,32 @@ object Account {
 
   case class RejectedTransaction(amount: Float,
                                  `type`: TransactionType, reason: String) extends DomainEvent
+
 }
 
-class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainEvent] {
+class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainEvent]
+  with ActorLogging {
 
   import Account._
-  import com.shah.persistence.demo.{AccountApi⇒API}
+  import com.shah.persistence.demo.{AccountApi ⇒ API}
 
   override def persistenceId: String = identifier
 
   override def applyEvent(evt: DomainEvent, currentData: Data): Data = {
     evt match {
-      case AcceptedTransaction(amount, API.CR)   =>
+      case AcceptedTransaction(amount, API.CR) =>
         val newAmount = currentData.amount + amount
-        println(s"Write side balance: $newAmount")
+        log.info(s"Write side balance: $newAmount")
         Balance(currentData.amount + amount)
-      case AcceptedTransaction(amount, API.DR)   =>
+      case AcceptedTransaction(amount, API.DR) =>
         val newAmount = currentData.amount - amount
-        println(s"Write side balance: $newAmount")
+        log.info(s"Write side balance: $newAmount")
         if (newAmount > 0)
           Balance(newAmount)
         else
           ZeroBalance
-      case RejectedTransaction(_, _, reason) =>
-        println(s"RejectedTransaction with reason: $reason")
+      case RejectedTransaction(_, _, reason)   =>
+        log.info(s"RejectedTransaction with reason: $reason")
         currentData
     }
   }
@@ -73,12 +77,9 @@ class Account extends PersistentFSM[Account.State, Account.Data, Account.DomainE
   startWith(Empty, ZeroBalance)
 
   when(Empty) {
-    //import com.shah.persistence.demo.AccountApi.Operation
     case Event(API.Operation(amount, API.CR), _) =>
-      println(s"Hi, It's your first Credit Operation.")
       goto(Active) applying AcceptedTransaction(amount, API.CR)
     case Event(API.Operation(amount, API.DR), _) =>
-      println(s"Sorry your account has zero balance.")
       stay applying RejectedTransaction(amount, API.DR, "Balance is Zero")
   }
 

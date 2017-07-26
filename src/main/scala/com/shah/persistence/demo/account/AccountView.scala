@@ -1,9 +1,11 @@
 package com.shah.persistence.demo.account
 
+import akka.actor.ActorLogging
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
+
 import scala.concurrent.ExecutionContext
 
-class AccountView extends QueryViewBase[Float] {
+class AccountView extends QueryViewBase[Float] with ActorLogging{
 
   import Account._
   import com.shah.persistence.demo.{AccountViewApi ⇒ API}
@@ -14,7 +16,7 @@ class AccountView extends QueryViewBase[Float] {
 
   def receiveReads: Receive = {
     case API.PrintAccountBalance ⇒
-      println(s"Account balance: $balance")
+      log.info(s"Account balance: $balance")
 
     case API.ReturnAccountBalance ⇒
       sender() ! balance
@@ -25,12 +27,12 @@ class AccountView extends QueryViewBase[Float] {
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, AccountApi.CR) ⇒
       balance += amount
-      println(s"+Read  side balance: $balance")
+      log.info(s"+Read side balance: $balance")
     case AcceptedTransaction(amount, AccountApi.DR) ⇒
       val newAmount = balance - amount
       if (newAmount > 0)
         balance = newAmount
-      println(s"-Read  side balance: $balance")
+      log.info(s"-Read side balance: $balance")
 
     case RejectedTransaction(_, _, _) ⇒
   }

@@ -1,6 +1,6 @@
 package com.shah.persistence.query.model
 
-import akka.actor.Props
+import akka.actor.{ActorLogging, Props}
 import akka.persistence.{PersistentActor, SnapshotOffer}
 
 object QueryViewSequenceSnapshotter {
@@ -22,7 +22,8 @@ package object QueryViewSequenceApi {
   def props(viewId: String): Props = Props(new QueryViewSequenceSnapshotter(viewId))
 }
 
-class QueryViewSequenceSnapshotter(viewId: String) extends PersistentActor {
+class QueryViewSequenceSnapshotter(viewId: String) extends PersistentActor
+  with ActorLogging{
 
   import QueryViewSequenceSnapshotter._
 
@@ -44,6 +45,9 @@ class QueryViewSequenceSnapshotter(viewId: String) extends PersistentActor {
         offsetForNextFetch = from
         saveSnapshot(offsetForNextFetch)
         sender() ! OffsetUpdated
+      }
+      else{
+        log.error("QueryViewSequenceSnapshotter update rejected.")
       }
   }
 

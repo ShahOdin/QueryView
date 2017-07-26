@@ -4,7 +4,7 @@ import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence.{RecoveryCompleted, SnapshotOffer, Snapshotter}
 import akka.persistence.query.EventEnvelope
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Sink
 import akka.util.Timeout
 
 import scala.concurrent.ExecutionContext
@@ -37,7 +37,8 @@ trait QueryViewImplBase extends Snapshotter
   with ActorLogging with QueryViewInfo with ReadJournalQuerySupport {
 
   implicit val ec: ExecutionContext
-  implicit val timeout = Timeout(3 seconds)
+  val timeoutDuration = 3 seconds
+  implicit val timeout = Timeout(timeoutDuration)
   import QueryViewImplBase._
 
   val snapshotFrequency: Int
@@ -52,14 +53,16 @@ trait QueryViewImplBase extends Snapshotter
     offsetForNextFetch += 1
     implicit val ec = context.dispatcher
     if (offsetForNextFetch % snapshotFrequency == 0) {
+      import scala.concurrent.Await
       val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(offsetForNextFetch)
       offsetUpdated onComplete {
-        case Success(_)      ⇒
+        case Success(value)      ⇒
           saveSnapshot()
         case Failure(reason) ⇒
           log.info(s"QueryView failed with reason: $reason")
           context.stop(self)
       }
+      Await.result(offsetUpdated,timeoutDuration)
     }
   }
 
@@ -87,9 +90,11 @@ trait QueryViewImplBase extends Snapshotter
 
     case RecoveryCompleted ⇒
       import com.shah.persistence.query.model.QueryViewSequenceApi.{GetLastSnapshottedSequenceNr, QuerryOffset}
+
+      import scala.concurrent.Await
       implicit val ec = context.dispatcher
-      (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr)
-        .mapTo[QuerryOffset].onComplete {
+      val lastSequenceNr = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
+      lastSequenceNr onComplete {
         case Success(QuerryOffset(sequenceNr)) ⇒
           offsetForNextFetch = sequenceNr
           scheduleJournalEvents()
@@ -99,6 +104,7 @@ trait QueryViewImplBase extends Snapshotter
             " Resorting to manual updating of cache based on all events.")
           scheduleJournalEvents()
       }
+      Await.result(lastSequenceNr, timeoutDuration)
 
   }
 
