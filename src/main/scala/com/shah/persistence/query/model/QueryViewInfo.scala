@@ -39,40 +39,53 @@ trait QueryViewImplBase extends Snapshotter
   implicit val ec: ExecutionContext
   val timeoutDuration = 3 seconds
   implicit val timeout = Timeout(timeoutDuration)
+
   import QueryViewImplBase._
+
+  var snapshotRequested = false
 
   val snapshotFrequency: Int
   val sequenceSnapshotterRef: ActorRef = context.actorOf(QueryViewSequenceApi.props(viewId))
 
+  import akka.persistence.SaveSnapshotSuccess
+
   def unhandledCommand: Receive = {
-    case event ⇒
-      log.debug(s"un-caught event: $event")
+    case SaveSnapshotSuccess(_) ⇒ //nothing
+    case event                  ⇒
+      log.error(s"un-caught event: $event")
   }
 
   def bookKeeping(): Unit = {
     offsetForNextFetch += 1
-    implicit val ec = context.dispatcher
-    if (offsetForNextFetch % snapshotFrequency == 0) {
-      import scala.concurrent.Await
-      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(offsetForNextFetch)
-      offsetUpdated onComplete {
-        case Success(value)      ⇒
-          saveSnapshot()
-        case Failure(reason) ⇒
-          log.info(s"QueryView failed with reason: $reason")
-          context.stop(self)
-      }
-      Await.result(offsetUpdated,timeoutDuration)
+    if (offsetForNextFetch % snapshotFrequency == 0 && !snapshotRequested) {
+      snapshotRequested = true
+      self ! RequestSnapshot
     }
   }
 
-  def QueryViewCommandPipeline: PartialFunction[Any, Any] = {
+  def performSnapshot: Receive = {
+    case RequestSnapshot ⇒
+      import scala.concurrent.Await
+      implicit val ec = context.dispatcher
+      val sequenceNumberTobeUpdated = offsetForNextFetch
+      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(sequenceNumberTobeUpdated)
+      offsetUpdated onComplete {
+        case Success(_)  ⇒
+          saveSnapshot()
+        case Failure(_) ⇒
+          context.stop(self)
+      }
+      Await.result(offsetUpdated, timeoutDuration)
+      snapshotRequested = true
+  }
+
+  def queryViewCommandPipeline: PartialFunction[Any, Any] = {
     case EventEnvelope(_, _, _, event) ⇒
       bookKeeping()
       sender() ! PersistedEventProcessed
       event
     case readEvent                     ⇒
-      readEvent //pass them on to the class mixing the trait.
+      readEvent //pass them on
   }
 
   val streamParallelism: Int = 5
@@ -103,11 +116,14 @@ trait QueryViewImplBase extends Snapshotter
             " Resorting to manual updating of cache based on all events.")
           scheduleJournalEvents()
       }
-
   }
 
 }
 
 object QueryViewImplBase {
+
   private[QueryViewImplBase] case object PersistedEventProcessed
+
+  private[QueryViewImplBase] case object RequestSnapshot
+
 }

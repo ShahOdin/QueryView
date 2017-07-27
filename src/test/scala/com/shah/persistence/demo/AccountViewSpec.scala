@@ -122,7 +122,7 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
     "snapshot its cache based on the write events." in {
 
       val account = getAccountWriter()
-      val creditAttempts = 17
+      val creditAttempts = 191
       val creditAmount = 1000
       for (i <- 1 to creditAttempts) {
         creditAccount(account, creditAmount)
@@ -130,8 +130,9 @@ class AccountViewSpec extends TestKit(ActorSystem("test-system")) with ImplicitS
 
       val reader = getAccountReader()
       killActors(reader)
+      Thread.sleep(4000)
       val resurrectedReader = getAccountReader()
-      Thread.sleep(2000)
+      Thread.sleep(1000)
       val balance = returnAccountBalance(resurrectedReader)
       balance.futureValue shouldBe creditAmount * creditAttempts
       killActors(resurrectedReader, account)

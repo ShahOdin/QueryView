@@ -23,7 +23,7 @@ package object QueryViewSequenceApi {
 }
 
 class QueryViewSequenceSnapshotter(viewId: String) extends PersistentActor
-  with ActorLogging{
+  with ActorLogging {
 
   import QueryViewSequenceSnapshotter._
 
@@ -46,8 +46,8 @@ class QueryViewSequenceSnapshotter(viewId: String) extends PersistentActor
         saveSnapshot(offsetForNextFetch)
         sender() ! OffsetUpdated
       }
-      else{
-        log.error("QueryViewSequenceSnapshotter update rejected.")
+      else {
+        log.error("QVSS update rejected.")
       }
   }
 
