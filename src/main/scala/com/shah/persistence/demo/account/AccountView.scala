@@ -7,7 +7,6 @@ import scala.concurrent.ExecutionContext
 
 class AccountView extends QueryViewBase[Float] with ActorLogging {
 
-  import Account._
   import com.shah.persistence.demo.{AccountViewApi ⇒ API}
 
   def viewId: String = AccountView.identifier
@@ -23,6 +22,7 @@ class AccountView extends QueryViewBase[Float] with ActorLogging {
   }
 
   import com.shah.persistence.demo.AccountApi
+  import Account.{AcceptedTransaction,RejectedTransaction}
 
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, AccountApi.CR) ⇒
