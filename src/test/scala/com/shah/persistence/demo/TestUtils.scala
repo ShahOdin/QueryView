@@ -34,11 +34,13 @@ object TestUtils {
           queryJournal(idToQuery, fromSequenceNr, Long.MaxValue)
       }
 
-      class AccountViewMockImpl(val snapshotFrequency: Int)(implicit override val ec: ExecutionContext)
+      class AccountViewMockImpl(val snapshotFrequency: Int,
+                                val streamParallelism: Int)
+                               (implicit override val ec: ExecutionContext)
         extends AccountView with QueryViewImpl with InMemQuerySupport
 
       def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
-        Props(new AccountViewMockImpl(snapshotFrequency))
+        Props(new AccountViewMockImpl(snapshotFrequency, 2))
 
     }
 

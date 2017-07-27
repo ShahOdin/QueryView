@@ -22,7 +22,7 @@ class AccountView extends QueryViewBase[Float] with ActorLogging {
   }
 
   import com.shah.persistence.demo.AccountApi
-  import Account.{AcceptedTransaction,RejectedTransaction}
+  import Account.{AcceptedTransaction, RejectedTransaction}
 
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, AccountApi.CR) ⇒
