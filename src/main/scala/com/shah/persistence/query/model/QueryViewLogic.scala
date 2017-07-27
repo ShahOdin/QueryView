@@ -14,7 +14,7 @@ import akka.pattern.ask
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-trait QueryViewInfo {
+trait QueryViewLogic {
 
   def viewId: String
 
@@ -33,14 +33,14 @@ trait QueryViewInfo {
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
-trait QueryViewImplBase extends Snapshotter
-  with ActorLogging with QueryViewInfo with ReadJournalQuerySupport {
+trait QueryViewLogicImpl extends Snapshotter
+  with ActorLogging with QueryViewLogic with ReadJournalQuerySupport {
 
   implicit val ec: ExecutionContext
   val timeoutDuration = 3 seconds
   implicit val timeout = Timeout(timeoutDuration)
 
-  import QueryViewImplBase._
+  import QueryViewLogicImpl._
 
   var snapshotRequested = false
 
@@ -87,7 +87,7 @@ trait QueryViewImplBase extends Snapshotter
       readEvent //pass them on
   }
 
-  val streamParallelism: Int = 5
+  val streamParallelism: Int
 
   def scheduleJournalEvents() = {
     val events = queryJournalFrom(queryId, offsetForNextFetch)
@@ -119,10 +119,10 @@ trait QueryViewImplBase extends Snapshotter
 
 }
 
-object QueryViewImplBase {
+object QueryViewLogicImpl {
 
-  private[QueryViewImplBase] case object PersistedEventProcessed
+  private[QueryViewLogicImpl] case object PersistedEventProcessed
 
-  private[QueryViewImplBase] case object RequestSnapshot
+  private[QueryViewLogicImpl] case object RequestSnapshot
 
 }

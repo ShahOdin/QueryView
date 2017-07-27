@@ -50,7 +50,8 @@ class AccountView extends QueryViewBase[Float] with ActorLogging {
   }
 }
 
-class AccountViewImpl(val snapshotFrequency: Int)
+class AccountViewImpl(val snapshotFrequency: Int,
+                      val streamParallelism: Int)
                      (implicit override val ec: ExecutionContext)
   extends AccountView with QueryViewImpl with LeveldBQuerySupport
 

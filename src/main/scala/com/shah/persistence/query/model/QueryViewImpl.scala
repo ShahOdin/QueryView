@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 
 //The view Persistent-Actors can mix this trait in to specify the building blocks of QueryView.
 abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
-  extends PersistentActor with QueryViewInfo {
+  extends PersistentActor with QueryViewLogic {
 
   type SnapshotData = D
 
@@ -23,8 +23,8 @@ abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
   def receiveReads: Receive
 }
 
-//The view actors extending QueryViewBase need to mix this in to get the QueryView machinery working.
-trait QueryViewImpl extends PersistentActor with QueryViewImplBase {
+//The view Persistent-Actors extending QueryViewBase need to mix this in to get the QueryView machinery working.
+trait QueryViewImpl extends PersistentActor with QueryViewLogicImpl {
 
   override def receiveRecover: Receive = receiveQueryViewSnapshot
 

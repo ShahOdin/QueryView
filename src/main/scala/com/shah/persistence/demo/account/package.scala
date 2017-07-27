@@ -12,6 +12,7 @@ package object AccountApi {
 
   // Commands
   case class Operation(amount: Float, `type`: TransactionType)
+
 }
 
 package object AccountViewApi {
@@ -26,5 +27,5 @@ package object AccountViewApi {
   case object ReturnAccountBalance
 
   def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
-    Props(new AccountViewImpl(snapshotFrequency))
+    Props(new AccountViewImpl(snapshotFrequency, 5))
 }
