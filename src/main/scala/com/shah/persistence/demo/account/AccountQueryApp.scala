@@ -23,10 +23,10 @@ object AccountQueryApp extends App {
   account ! AccountApi.Operation(500, AccountApi.DR)
 
   reader ! AccountViewApi.PrintAccountBalance
-  Thread.sleep(3000)
+  Thread.sleep(1000)
   reader ! AccountViewApi.PrintAccountBalance
 
-  Thread.sleep(4000)
+  Thread.sleep(1000)
   system.terminate()
 }
 

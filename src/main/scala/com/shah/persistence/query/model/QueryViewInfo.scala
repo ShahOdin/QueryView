@@ -65,18 +65,17 @@ trait QueryViewImplBase extends Snapshotter
 
   def performSnapshot: Receive = {
     case RequestSnapshot ⇒
-      import scala.concurrent.Await
       implicit val ec = context.dispatcher
-      val sequenceNumberTobeUpdated = offsetForNextFetch
-      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(sequenceNumberTobeUpdated)
-      offsetUpdated onComplete {
-        case Success(_)  ⇒
+      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(offsetForNextFetch)
+
+      offsetUpdated map {
+        _ ⇒
           saveSnapshot()
-        case Failure(_) ⇒
-          context.stop(self)
+          snapshotRequested = false
+      } recover{
+        case _ ⇒
+          log.debug("QueryViewSequenceSnapshotter not reachable. Will try again later.")
       }
-      Await.result(offsetUpdated, timeoutDuration)
-      snapshotRequested = true
   }
 
   def queryViewCommandPipeline: PartialFunction[Any, Any] = {

@@ -1,9 +1,11 @@
 package com.shah.persistence.demo.account
 
+import akka.actor.ActorLogging
 import com.shah.persistence.query.model.{LeveldBQuerySupport, QueryViewBase, QueryViewImpl}
+
 import scala.concurrent.ExecutionContext
 
-class AccountView extends QueryViewBase[Float] {
+class AccountView extends QueryViewBase[Float] with ActorLogging {
 
   import Account._
   import com.shah.persistence.demo.{AccountViewApi ⇒ API}
@@ -25,19 +27,23 @@ class AccountView extends QueryViewBase[Float] {
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, AccountApi.CR) ⇒
       balance += amount
-      println(s"+Read  side balance: $balance")
+
+      log.info(s"+Read  side balance: $balance")
     case AcceptedTransaction(amount, AccountApi.DR) ⇒
       val newAmount = balance - amount
       if (newAmount > 0)
         balance = newAmount
-      println(s"-Read  side balance: $balance")
+      log.info(s"-Read  side balance: $balance")
 
     case RejectedTransaction(_, _, _) ⇒
   }
 
   var balance: Float = 0L
 
-  def saveSnapshot(): Unit = saveSnapshot(balance)
+  def saveSnapshot(): Unit = {
+    println(s"snapshotted with balance: $balance")
+    saveSnapshot(balance)
+  }
 
   def applySnapshot(updatedBalance: Float) = {
     balance = updatedBalance
