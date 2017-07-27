@@ -15,7 +15,7 @@ class AccountView extends QueryViewBase[Float] with ActorLogging {
 
   def receiveReads: Receive = {
     case API.PrintAccountBalance ⇒
-      println(s"Account balance: $balance")
+      log.debug(s"Account balance: $balance")
 
     case API.ReturnAccountBalance ⇒
       sender() ! balance

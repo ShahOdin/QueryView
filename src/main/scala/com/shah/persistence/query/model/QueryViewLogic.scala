@@ -74,7 +74,8 @@ trait QueryViewLogicImpl extends Snapshotter
           snapshotRequested = false
       } recover{
         case _ ⇒
-          log.debug("QueryViewSequenceSnapshotter not reachable. Will try again later.")
+          self ! RequestSnapshot
+          log.debug("QueryViewSequenceSnapshotter not reachable. Will try again.")
       }
   }
 
