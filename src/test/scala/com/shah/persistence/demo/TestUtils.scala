@@ -12,7 +12,7 @@ object TestUtils {
 
     object AccountView {
 
-      import akka.actor.Actor
+      import akka.actor.{Actor, ActorSystem}
       import com.shah.persistence.demo.account.AccountView
       import com.shah.persistence.query.model.ReadJournalQuerySupport
 
@@ -41,6 +41,9 @@ object TestUtils {
 
       def props(snapshotFrequency: Int)(implicit ec: ExecutionContext) =
         Props(new AccountViewMockImpl(snapshotFrequency, 2))
+
+      def startActor(system: ActorSystem, snapshotFrequency: Int)
+                    (implicit ec: ExecutionContext) = system.actorOf(props(snapshotFrequency))
 
     }
 
