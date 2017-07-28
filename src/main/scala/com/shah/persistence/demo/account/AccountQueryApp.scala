@@ -1,7 +1,6 @@
 package com.shah.persistence.demo.account
 
-import akka.actor.{ActorSystem, Props}
-import com.shah.persistence.query.model.{LeveldBInspector, PrintEvents}
+import akka.actor.ActorSystem
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -13,7 +12,7 @@ object AccountQueryApp extends App {
 
   val system: ActorSystem = ActorSystem("AccountQueryApp")
 
-  val account = system.actorOf(Props[Account])
+  val account = AccountApi.startActor(system)
 
   val reader = system.actorOf(AccountViewApi.props(3))
 
@@ -34,6 +33,8 @@ object AccountQueryApp extends App {
 object AccountInspectApp extends App {
 
   val system: ActorSystem = ActorSystem("AccountInspectApp")
+
+  import com.shah.persistence.query.model.{LeveldBInspector, PrintEvents}
 
   val inspector = system.actorOf(LeveldBInspector.props())
   inspector ! PrintEvents(Account.identifier)

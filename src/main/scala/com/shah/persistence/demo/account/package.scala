@@ -3,6 +3,9 @@ package com.shah.persistence.demo
 
 package object AccountApi {
 
+  import akka.actor.{ActorSystem, Props}
+  import com.shah.persistence.demo.account.Account
+
   // Transaction Types
   private[demo] sealed trait TransactionType
 
@@ -12,6 +15,8 @@ package object AccountApi {
 
   // Commands
   case class Operation(amount: Float, `type`: TransactionType)
+
+  def startActor(system: ActorSystem) = system.actorOf(Props[Account])
 
 }
 
