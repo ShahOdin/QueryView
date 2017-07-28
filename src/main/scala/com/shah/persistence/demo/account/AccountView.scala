@@ -41,7 +41,7 @@ class AccountView extends QueryViewBase[Float] with ActorLogging {
   var balance: Float = 0L
 
   def saveSnapshot(): Unit = {
-    println(s"snapshotted with balance: $balance")
+    log.info(s"snapshotted with balance: $balance")
     saveSnapshot(balance)
   }
 
