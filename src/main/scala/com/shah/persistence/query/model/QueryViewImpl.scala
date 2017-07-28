@@ -14,7 +14,8 @@ abstract class QueryViewBase[D](implicit val snapshotData: ClassTag[D])
 
   def persistenceId: String = viewId
 
-  def receiveRecover: Receive = Map.empty
+  import akka.actor.Actor.emptyBehavior
+  def receiveRecover: Receive = emptyBehavior
 
   def receiveCommand: Receive = receiveReads orElse receiveJournalEvents
 
