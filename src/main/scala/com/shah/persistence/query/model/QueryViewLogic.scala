@@ -55,28 +55,48 @@ trait QueryViewLogicImpl extends Snapshotter
       log.error(s"un-caught event: $event")
   }
 
+  def recevieInternal: Receive = performSnapshot orElse readOffsetValue
+
+  def performSnapshot: Receive = {
+    case RequestSnapshot ⇒
+      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(offsetForNextFetch)
+
+      offsetUpdated map {
+        _ ⇒
+          saveSnapshot()
+          val inboundAcknowldegment = sender() ? QueryViewSequenceApi.OffsetUpdateOutBoundAcknowledgement
+          inboundAcknowldegment.map {
+            _ ⇒ snapshotRequested = false
+          } recover { case _ ⇒ self ! RequestSnapshot }
+      } recover {
+        case _ ⇒
+          self ! RequestSnapshot
+          log.debug("QueryViewSequenceSnapshotter not reachable. Will try again.")
+      }
+  }
+
+  def readOffsetValue: Receive = {
+    case ReadOffsetSequence ⇒
+      import com.shah.persistence.query.model.QueryViewSequenceApi.{GetLastSnapshottedSequenceNr, QuerryOffset}
+      val lastSequenceNr = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
+      lastSequenceNr onComplete {
+        case Success(QuerryOffset(sequenceNr)) ⇒
+          offsetForNextFetch = sequenceNr
+          scheduleJournalEvents()
+
+        case Failure(reason) ⇒
+          log.info(s"offset sequence snapshotter failed to catch up: $reason." +
+            "Requesting again shortly.")
+          context.system.scheduler.scheduleOnce(1 second, self, ReadOffsetSequence)
+      }
+  }
+
   def bookKeeping(): Unit = {
     offsetForNextFetch += 1
     if (offsetForNextFetch % snapshotFrequency == 0 && !snapshotRequested) {
       snapshotRequested = true
       self ! RequestSnapshot
     }
-  }
-
-  def performSnapshot: Receive = {
-    case RequestSnapshot ⇒
-      implicit val ec = context.dispatcher
-      val offsetUpdated = sequenceSnapshotterRef ? QueryViewSequenceApi.UpdateSequenceNr(offsetForNextFetch)
-
-      offsetUpdated map {
-        _ ⇒
-          saveSnapshot()
-          snapshotRequested = false
-      } recover{
-        case _ ⇒
-          self ! RequestSnapshot
-          log.debug("QueryViewSequenceSnapshotter not reachable. Will try again.")
-      }
   }
 
   def queryViewCommandPipeline: PartialFunction[Any, Any] = {
@@ -102,20 +122,7 @@ trait QueryViewLogicImpl extends Snapshotter
       applySnapshot(cache)
 
     case RecoveryCompleted ⇒
-      import com.shah.persistence.query.model.QueryViewSequenceApi.{GetLastSnapshottedSequenceNr, QuerryOffset}
-
-      implicit val ec = context.dispatcher
-      val lastSequenceNr = (sequenceSnapshotterRef ? GetLastSnapshottedSequenceNr).mapTo[QuerryOffset]
-      lastSequenceNr onComplete {
-        case Success(QuerryOffset(sequenceNr)) ⇒
-          offsetForNextFetch = sequenceNr
-          scheduleJournalEvents()
-
-        case Failure(reason) ⇒
-          log.info(s"offset sequence snapshotter failed to catch up: $reason." +
-            " Resorting to manual updating of cache based on all events.")
-          scheduleJournalEvents()
-      }
+      self ! ReadOffsetSequence
   }
 
 }
@@ -125,5 +132,7 @@ object QueryViewLogicImpl {
   private[QueryViewLogicImpl] case object PersistedEventProcessed
 
   private[QueryViewLogicImpl] case object RequestSnapshot
+
+  private[QueryViewLogicImpl] case object ReadOffsetSequence
 
 }
