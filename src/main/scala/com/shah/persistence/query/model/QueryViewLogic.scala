@@ -1,5 +1,6 @@
 package com.shah.persistence.query.model
 
+
 import akka.actor.{ActorLogging, Stash}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import akka.persistence.query.EventEnvelope
@@ -46,8 +47,10 @@ trait QueryViewLogicImpl extends PersistentActor
   private var snapshotInProgress = false
   private var snapshotProcessedAndWaitingForOffsetEvent = false
   private var lastSnapshotSequenceNr = 0L
+  private var attemptsAtPendingSnapshotCall: Int = 0
 
   import akka.persistence.SnapshotMetadata
+
   def receiveQueryViewSnapshot: Receive = {
     case SnapshotOffer(SnapshotMetadata(_, sequenceNr, _), snapshotData(cache)) ⇒
       snapshotProcessedAndWaitingForOffsetEvent = true
@@ -59,8 +62,8 @@ trait QueryViewLogicImpl extends PersistentActor
       snapshotProcessedAndWaitingForOffsetEvent = false
 
     case RecoveryCompleted ⇒
-      if(snapshotProcessedAndWaitingForOffsetEvent) //ie if persistence failed on the offsetEvent.
-        deleteIncompleteSnapshot()
+      if (snapshotProcessedAndWaitingForOffsetEvent) //ie if persistence failed on the offsetEvent.
+        tryDeleteLastSnapshot()
       else
         scheduleJournalEvents()
   }
@@ -74,39 +77,69 @@ trait QueryViewLogicImpl extends PersistentActor
       .runWith(Sink.ignore)
   }
 
-  def deleteIncompleteSnapshot() = {
+  def trySaveSnapshot(): Unit = {
+    saveSnapshot()
+    val duration = getSnapshotCallWaitDuration()
+    context.system.scheduler.scheduleOnce(duration, self, CheckSnapshotSaved)
+  }
+
+  def tryDeleteLastSnapshot(): Unit = {
     deleteSnapshot(lastSnapshotSequenceNr)
+    val duration = getSnapshotCallWaitDuration()
+    context.system.scheduler.scheduleOnce(duration, self, CheckSnapshotDeleted)
   }
 
   import akka.persistence.{SaveSnapshotSuccess, SaveSnapshotFailure, DeleteSnapshotSuccess, DeleteSnapshotFailure}
+
   def takeSnapshot: Receive = {
 
     case StartSnapshotProcess ⇒
       snapshotInProgress = true
-      saveSnapshot()
+      trySaveSnapshot()
 
     case SaveSnapshotFailure ⇒
-      log.error("saving snapshot failed. retrying.")
-      saveSnapshot()
+      log.error(s"saving snapshot failed. Offset = ${offsetForNextFetch}. retry in progress.")
+
+    case CheckSnapshotSaved ⇒
+      if (attemptsAtPendingSnapshotCall != 0)
+        trySaveSnapshot()
 
     case SaveSnapshotSuccess(_) ⇒
       persist(OffsetEvent(offsetForNextFetch)) { case OffsetEvent(from) ⇒ updateOffset(from) }
       snapshotInProgress = false
+      attemptsAtPendingSnapshotCall = 0
       unstashAll()
 
-    case _ if snapshotInProgress ⇒
-      stash()
+    case DeleteSnapshotFailure(_, _) ⇒
+      log.error(s"deleting snapshot failed. Offset = ${offsetForNextFetch}. retry in progress.")
+
+    case CheckSnapshotDeleted ⇒
+      tryDeleteLastSnapshot()
 
     case DeleteSnapshotSuccess(_) ⇒
       log.debug("incomplete snapshot attempt deleted from the snapshot store. " +
         "restarting to revert to previous snapshot.")
+      attemptsAtPendingSnapshotCall = 0
       context.stop(self)
 
-    case DeleteSnapshotFailure(_,_) ⇒
-      log.error("incomplete snapshot attempt, could not be deleted from the snapshot store. " +
-        "retrying.")
-      deleteIncompleteSnapshot()
+    case _ if snapshotInProgress ⇒
+      stash()
   }
+
+  def getSnapshotCallWaitDuration(): FiniteDuration = {
+    def getExponentialWaitDuration(attemptsMade: Int): FiniteDuration = {
+      val attemptNrCap = 5
+      val minimumWait = 1
+      val cappedAttemptNr = if (attemptsMade > attemptNrCap) attemptNrCap else attemptsMade
+      val randomVariation = scala.util.Random.nextDouble() - 0.5f
+      val waitDuration = scala.math.pow(2, cappedAttemptNr) + randomVariation
+      waitDuration seconds
+    }
+
+    attemptsAtPendingSnapshotCall += 1
+    getExponentialWaitDuration(attemptsAtPendingSnapshotCall)
+  }
+
 
   def updateOffset(from: Long) = {
     offsetForNextFetch = from
@@ -117,7 +150,7 @@ trait QueryViewLogicImpl extends PersistentActor
       bookKeeping()
       sender() ! PersistedEventProcessed
       event
-    case readEvent ⇒
+    case readEvent                     ⇒
       readEvent //pass them on
   }
 
@@ -140,5 +173,10 @@ object QueryViewLogicImpl {
 
   private[QueryViewLogicImpl] case object StartSnapshotProcess
 
+  private[QueryViewLogicImpl] case object CheckSnapshotDeleted
+
+  private[QueryViewLogicImpl] case object CheckSnapshotSaved
+
   private[QueryViewLogicImpl] case class OffsetEvent(from: Long)
+
 }
