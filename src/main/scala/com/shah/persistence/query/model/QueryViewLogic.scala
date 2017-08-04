@@ -1,6 +1,5 @@
 package com.shah.persistence.query.model
 
-
 import akka.actor.{ActorLogging, Stash}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import akka.persistence.query.EventEnvelope
@@ -91,14 +90,15 @@ trait QueryViewLogicImpl extends PersistentActor
 
   import akka.persistence.{SaveSnapshotSuccess, SaveSnapshotFailure, DeleteSnapshotSuccess, DeleteSnapshotFailure}
 
-  def takeSnapshot: Receive = {
+  def internalSnapshotRelated: Receive = {
 
     case StartSnapshotProcess ⇒
       snapshotInProgress = true
       trySaveSnapshot()
 
+    // the following messages are run periodically for snapshotting state.
     case SaveSnapshotFailure ⇒
-      log.error(s"saving snapshot failed. Offset = ${offsetForNextFetch}. retry in progress.")
+      log.error(s"saving snapshot failed. Offset = ${offsetForNextFetch}. retry will be attempted shortly.")
 
     case CheckSnapshotSaved ⇒
       if (attemptsAtPendingSnapshotCall != 0)
@@ -110,8 +110,9 @@ trait QueryViewLogicImpl extends PersistentActor
       attemptsAtPendingSnapshotCall = 0
       unstashAll()
 
+    // the following messages are run in case of recovery after persistence failure.
     case DeleteSnapshotFailure(_, _) ⇒
-      log.error(s"deleting snapshot failed. Offset = ${offsetForNextFetch}. retry in progress.")
+      log.error(s"deleting snapshot failed. Offset = ${offsetForNextFetch}. retry will be attempted shortly.")
 
     case CheckSnapshotDeleted ⇒
       tryDeleteLastSnapshot()
@@ -128,11 +129,15 @@ trait QueryViewLogicImpl extends PersistentActor
 
   def getSnapshotCallWaitDuration(): FiniteDuration = {
     def getExponentialWaitDuration(attemptsMade: Int): FiniteDuration = {
-      val attemptNrCap = 5
-      val minimumWait = 1
-      val cappedAttemptNr = if (attemptsMade > attemptNrCap) attemptNrCap else attemptsMade
-      val randomVariation = scala.util.Random.nextDouble() - 0.5f
-      val waitDuration = scala.math.pow(2, cappedAttemptNr) + randomVariation
+      val attemptNrMax = 5
+      val attemptNrMin = 1
+      val cappedAttemptNr = attemptsMade match{
+        case i if i> attemptNrMax ⇒ attemptNrMax
+        case i if i< attemptNrMin ⇒ attemptNrMin
+        case i ⇒ i
+      }
+      val randomVariation = 0.9 + (scala.util.Random.nextDouble() * 0.2)
+      val waitDuration = scala.math.pow(2, cappedAttemptNr) * randomVariation
       waitDuration seconds
     }
 
