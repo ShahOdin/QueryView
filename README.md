@@ -3,7 +3,7 @@
 
 `QueryView` is a lightweight implementation of PersistentView based on the stream API, which snapshots its local cache of the data it builds up from the events related to `PersistentActor` of interest. it does not persist its data and relies only on regular snapshotting of the data it reads. 
 
-`QueryView` snapshots the cached data itself and delegates the responsibility of cacheing the offsets to [`QueryViewSequenceSnapshotter`](https://github.com/ShahOdin/QueryView/blob/master/src/main/scala/com/shah/persistence/query/model/QueryViewSequenceSnapshotter.scala).  Note that a given QueryView does not have to cache the full set of data it reads from a persistent Actor and can pick and choose the data it caches internally.
+`QueryView` snapshots the cached data itself and caches the offsets as persisted events. Note that a given QueryView does not have to cache the full set of data it reads from a persistent Actor and can pick and choose the data it caches internally.
 
 The basis of using `PersistenceQuery` can be seen in [`QueryInspector`](https://github.com/ShahOdin/QueryView/blob/master/src/main/scala/com/shah/persistence/query/model/QueryInspector.scala) which creates a stream of events from a `PersistentActor` and will receive all the following events from that actor in its inbox. That would be the starting point to look at. [`AccountInspectApp`](https://github.com/ShahOdin/QueryView/blob/master/src/main/scala/com/shah/persistence/demo/account/AccountQueryApp.scala#L34) demonstrates this. 
 
