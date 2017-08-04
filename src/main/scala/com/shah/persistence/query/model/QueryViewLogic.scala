@@ -44,52 +44,25 @@ trait QueryViewLogicImpl extends PersistentActor
   val snapshotFrequency: Int
 
   private var snapshotInProgress = false
+  private var snapshotProcessedAndWaitingForOffsetEvent = false
+  private var lastSnapshotSequenceNr = 0L
 
-  def unhandledCommand: Receive = {
-    case event                  ⇒
-      log.error(s"ignored event: $event")
-  }
+  import akka.persistence.SnapshotMetadata
+  def receiveQueryViewSnapshot: Receive = {
+    case SnapshotOffer(SnapshotMetadata(_, sequenceNr, _), snapshotData(cache)) ⇒
+      snapshotProcessedAndWaitingForOffsetEvent = true
+      lastSnapshotSequenceNr = sequenceNr
+      applySnapshot(cache)
 
-  def bookKeeping(): Unit = {
-    offsetForNextFetch += 1
-    if (offsetForNextFetch % snapshotFrequency == 0) {
-      snapshotInProgress = true
-      self ! StartSnapshotProcess
-    }
-  }
+    case OffsetEvent(from) ⇒
+      updateOffset(from)
+      snapshotProcessedAndWaitingForOffsetEvent = false
 
-  def updateOffset(from: Long) ={
-    log.info(s"updating the offset value from ${offsetForNextFetch} to ${from}")
-    offsetForNextFetch = from
-  }
-
-  import akka.persistence.{SaveSnapshotSuccess,SaveSnapshotFailure}
-  def takeSnapshot: Receive = {
-    case StartSnapshotProcess ⇒
-      log.info(s"snapshot started with offset: ${offsetForNextFetch}")
-      saveSnapshot()
-
-    case SaveSnapshotFailure ⇒
-      log.info(s"snapshot failed with offset: ${offsetForNextFetch}, retrying...")
-      saveSnapshot()
-
-    case SaveSnapshotSuccess(_)  ⇒
-      persist(OffsetEvent(offsetForNextFetch)){ case OffsetEvent(from) ⇒ updateOffset(from) }
-      snapshotInProgress = false
-      unstashAll()
-      log.info("snapshot finished.")
-    case command if snapshotInProgress ⇒
-      log.info(s"message being stashed: ${command}")
-      stash()
-  }
-
-  def queryViewCommandPipeline: PartialFunction[Any, Any] = {
-    case EventEnvelope(_, _, _, event) ⇒
-      bookKeeping()
-      sender() ! PersistedEventProcessed
-      event
-    case readEvent                     ⇒
-      readEvent //pass them on
+    case RecoveryCompleted ⇒
+      if(snapshotProcessedAndWaitingForOffsetEvent) //ie if persistence failed on the offsetEvent.
+        deleteIncompleteSnapshot()
+      else
+        scheduleJournalEvents()
   }
 
   val streamParallelism: Int
@@ -101,18 +74,64 @@ trait QueryViewLogicImpl extends PersistentActor
       .runWith(Sink.ignore)
   }
 
-  def receiveQueryViewSnapshot: Receive = {
-    case SnapshotOffer(_, snapshotData(cache)) ⇒
-      applySnapshot(cache)
-
-    case OffsetEvent(from) ⇒
-      updateOffset(from)
-
-    case RecoveryCompleted ⇒
-      log.info(s"recovery completed with offset: ${offsetForNextFetch}")
-      scheduleJournalEvents()
+  def deleteIncompleteSnapshot() = {
+    deleteSnapshot(lastSnapshotSequenceNr)
   }
 
+  import akka.persistence.{SaveSnapshotSuccess, SaveSnapshotFailure, DeleteSnapshotSuccess, DeleteSnapshotFailure}
+  def takeSnapshot: Receive = {
+
+    case StartSnapshotProcess ⇒
+      snapshotInProgress = true
+      saveSnapshot()
+
+    case SaveSnapshotFailure ⇒
+      log.error("saving snapshot failed. retrying.")
+      saveSnapshot()
+
+    case SaveSnapshotSuccess(_) ⇒
+      persist(OffsetEvent(offsetForNextFetch)) { case OffsetEvent(from) ⇒ updateOffset(from) }
+      snapshotInProgress = false
+      unstashAll()
+
+    case _ if snapshotInProgress ⇒
+      stash()
+
+    case DeleteSnapshotSuccess(_) ⇒
+      log.debug("incomplete snapshot attempt deleted from the snapshot store. " +
+        "restarting to revert to previous snapshot.")
+      context.stop(self)
+
+    case DeleteSnapshotFailure(_,_) ⇒
+      log.error("incomplete snapshot attempt, could not be deleted from the snapshot store. " +
+        "retrying.")
+      deleteIncompleteSnapshot()
+  }
+
+  def updateOffset(from: Long) = {
+    offsetForNextFetch = from
+  }
+
+  def queryViewCommandPipeline: PartialFunction[Any, Any] = {
+    case EventEnvelope(_, _, _, event) ⇒
+      bookKeeping()
+      sender() ! PersistedEventProcessed
+      event
+    case readEvent ⇒
+      readEvent //pass them on
+  }
+
+  def bookKeeping(): Unit = {
+    offsetForNextFetch += 1
+    if (offsetForNextFetch % snapshotFrequency == 0) {
+      self ! StartSnapshotProcess
+    }
+  }
+
+  def unhandledCommand: Receive = {
+    case event ⇒
+      log.error(s"ignored event: $event")
+  }
 }
 
 object QueryViewLogicImpl {
