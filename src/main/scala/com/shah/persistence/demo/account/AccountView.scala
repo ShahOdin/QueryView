@@ -26,14 +26,17 @@ class AccountView extends QueryViewBase[Float] with ActorLogging {
 
   def receiveJournalEvents: Receive = {
     case AcceptedTransaction(amount, AccountApi.CR) ⇒
+      log.info(s"+CR, balance: $balance => ${balance + amount}")
       balance += amount
-
-      log.info(s"+Read side balance: $balance")
     case AcceptedTransaction(amount, AccountApi.DR) ⇒
       val newAmount = balance - amount
-      if (newAmount > 0)
-        balance = newAmount
-      log.info(s"-Read side balance: $balance")
+      if (newAmount >= 0)
+        {
+          log.info(s"-DR, balance: $balance => $newAmount")
+          balance = newAmount
+        }
+      else
+        log.info(s"This shouldn't happen!")
 
     case RejectedTransaction(_, _, _) ⇒
   }
