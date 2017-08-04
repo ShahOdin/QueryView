@@ -84,7 +84,7 @@ object AccountQueryApp extends App {
   Thread.sleep(1000)
   reader ! AccountViewApi.PrintAccountBalance
 
-  Thread.sleep(2000)
+  Thread.sleep(4000)
   system.terminate()
 }
 
