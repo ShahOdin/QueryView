@@ -115,7 +115,8 @@ trait QueryViewLogicImpl extends PersistentActor
       log.error(s"deleting snapshot failed. Offset = ${offsetForNextFetch}. retry will be attempted shortly.")
 
     case CheckSnapshotDeleted ⇒
-      tryDeleteLastSnapshot()
+      if (attemptsAtPendingSnapshotCall != 0)
+        tryDeleteLastSnapshot()
 
     case DeleteSnapshotSuccess(_) ⇒
       log.debug("incomplete snapshot attempt deleted from the snapshot store. " +
