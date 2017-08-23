@@ -28,16 +28,13 @@ trait QueryViewLogic {
   def applySnapshot(updatedData: SnapshotData): Unit
 
   implicit val snapshotData: ClassTag[SnapshotData]
-
 }
 
 //This needs to be mixed in to create and enable the pipelines to be assembled.
 trait QueryViewLogicImpl extends PersistentActor
-  with Stash with ActorLogging with QueryViewLogic with ReadJournalQuerySupport {
+    with Stash with ActorLogging with QueryViewLogic with ReadJournalQuerySupport {
 
   implicit val ec: ExecutionContext
-  val timeoutDuration = 3 seconds
-  implicit val timeout = Timeout(timeoutDuration)
 
   import QueryViewLogicImpl._
 
@@ -50,7 +47,7 @@ trait QueryViewLogicImpl extends PersistentActor
 
   import akka.persistence.SnapshotMetadata
 
-  def receiveQueryViewSnapshot: Receive = {
+  protected def receiveQueryViewSnapshot: Receive = {
     case SnapshotOffer(SnapshotMetadata(_, sequenceNr, _), snapshotData(cache)) ⇒
       snapshotProcessedAndWaitingForOffsetEvent = true
       lastSnapshotSequenceNr = sequenceNr
@@ -62,27 +59,29 @@ trait QueryViewLogicImpl extends PersistentActor
 
     case RecoveryCompleted ⇒
       if (snapshotProcessedAndWaitingForOffsetEvent) //ie if persistence failed on the offsetEvent.
+      {
         tryDeleteLastSnapshot()
-      else
+      } else
         scheduleJournalEvents()
   }
 
   val streamParallelism: Int
 
-  def scheduleJournalEvents() = {
+  protected def scheduleJournalEvents() = {
     val events = queryJournalFrom(queryId, offsetForNextFetch)
     implicit val materializer = ActorMaterializer()(context.system)
+    implicit val timeout = Timeout(1 seconds)
     events.mapAsync(parallelism = streamParallelism)(elem ⇒ self ? elem)
       .runWith(Sink.ignore)
   }
 
-  def trySaveSnapshot(): Unit = {
+  private def trySaveSnapshot(): Unit = {
     saveSnapshot()
     val duration = getSnapshotCallWaitDuration()
     context.system.scheduler.scheduleOnce(duration, self, CheckSnapshotSaved)
   }
 
-  def tryDeleteLastSnapshot(): Unit = {
+  private def tryDeleteLastSnapshot(): Unit = {
     deleteSnapshot(lastSnapshotSequenceNr)
     val duration = getSnapshotCallWaitDuration()
     context.system.scheduler.scheduleOnce(duration, self, CheckSnapshotDeleted)
@@ -90,7 +89,7 @@ trait QueryViewLogicImpl extends PersistentActor
 
   import akka.persistence.{SaveSnapshotSuccess, SaveSnapshotFailure, DeleteSnapshotSuccess, DeleteSnapshotFailure}
 
-  def internalSnapshotRelated: Receive = {
+  protected def internalSnapshotRelated: Receive = {
 
     case StartSnapshotProcess ⇒
       snapshotInProgress = true
@@ -101,8 +100,9 @@ trait QueryViewLogicImpl extends PersistentActor
       log.error(s"saving snapshot failed. Offset = ${offsetForNextFetch}. retry will be attempted shortly.")
 
     case CheckSnapshotSaved ⇒
-      if (attemptsAtPendingSnapshotCall != 0)
+      if (attemptsAtPendingSnapshotCall != 0) {
         trySaveSnapshot()
+      }
 
     case SaveSnapshotSuccess(_) ⇒
       persist(OffsetEvent(offsetForNextFetch)) { case OffsetEvent(from) ⇒ updateOffset(from) }
@@ -115,8 +115,9 @@ trait QueryViewLogicImpl extends PersistentActor
       log.error(s"deleting snapshot failed. Offset = ${offsetForNextFetch}. retry will be attempted shortly.")
 
     case CheckSnapshotDeleted ⇒
-      if (attemptsAtPendingSnapshotCall != 0)
+      if (attemptsAtPendingSnapshotCall != 0) {
         tryDeleteLastSnapshot()
+      }
 
     case DeleteSnapshotSuccess(_) ⇒
       log.debug("incomplete snapshot attempt deleted from the snapshot store. " +
@@ -128,46 +129,50 @@ trait QueryViewLogicImpl extends PersistentActor
       stash()
   }
 
-  def getSnapshotCallWaitDuration(): FiniteDuration = {
-    def getExponentialWaitDuration(attemptsMade: Int): FiniteDuration = {
+  private def getSnapshotCallWaitDuration(): FiniteDuration = {
+    def getExponentialWaitDuration(attemptsMade: Int): Double = {
       val attemptNrMax = 5
       val attemptNrMin = 1
-      val cappedAttemptNr = attemptsMade match{
-        case i if i> attemptNrMax ⇒ attemptNrMax
-        case i if i< attemptNrMin ⇒ attemptNrMin
-        case i ⇒ i
+      val cappedAttemptNr = attemptsMade match {
+        case i if i > attemptNrMax ⇒ attemptNrMax
+        case i if i < attemptNrMin ⇒ attemptNrMin
+        case i                     ⇒ i
       }
       val randomVariation = 0.9 + (scala.util.Random.nextDouble() * 0.2)
-      val waitDuration = scala.math.pow(2, cappedAttemptNr) * randomVariation
-      waitDuration seconds
+      scala.math.pow(2, cappedAttemptNr) * randomVariation
     }
 
     attemptsAtPendingSnapshotCall += 1
-    getExponentialWaitDuration(attemptsAtPendingSnapshotCall)
+    getExponentialWaitDuration(attemptsAtPendingSnapshotCall) seconds
   }
 
-
-  def updateOffset(from: Long) = {
+  private def updateOffset(from: Long) = {
     offsetForNextFetch = from
   }
 
+
+  import akka.persistence.query.Sequence
   def queryViewCommandPipeline: PartialFunction[Any, Any] = {
-    case EventEnvelope(_, _, _, event) ⇒
-      bookKeeping()
+    case EventEnvelope( Sequence(offset), _, _, event) ⇒
+      bookKeeping(offset)
       sender() ! PersistedEventProcessed
       event
-    case readEvent                     ⇒
+
+    case readEvent ⇒
       readEvent //pass them on
   }
 
-  def bookKeeping(): Unit = {
+  private def bookKeeping(messageOffset: Long) = {
+    if (messageOffset != offsetForNextFetch) {
+      log.error(s"expected a message with offset: $offsetForNextFetch but received one with offset: $messageOffset")
+    }
     offsetForNextFetch += 1
     if (offsetForNextFetch % snapshotFrequency == 0) {
       self ! StartSnapshotProcess
     }
   }
 
-  def unhandledCommand: Receive = {
+  protected def unhandledCommand: Receive = {
     case event ⇒
       log.error(s"ignored event: $event")
   }

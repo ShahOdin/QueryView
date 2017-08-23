@@ -30,8 +30,7 @@ trait QueryViewImpl extends PersistentActor with QueryViewLogicImpl {
   override def receiveRecover: Receive = receiveQueryViewSnapshot
 
   abstract override def receiveCommand: Receive = {
-    takeSnapshot orElse
-      (queryViewCommandPipeline andThen (super.receiveCommand orElse unhandledCommand))
+    internalSnapshotRelated orElse (queryViewCommandPipeline andThen (super.receiveCommand orElse unhandledCommand))
   }
 
 }
