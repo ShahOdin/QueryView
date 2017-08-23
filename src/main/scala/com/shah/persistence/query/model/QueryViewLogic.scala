@@ -166,7 +166,7 @@ trait QueryViewLogicImpl extends PersistentActor
     if (messageOffset != offsetForNextFetch) {
       log.error(s"expected a message with offset: $offsetForNextFetch but received one with offset: $messageOffset")
     }
-    offsetForNextFetch += 1
+    offsetForNextFetch = messageOffset + 1
     if (offsetForNextFetch % snapshotFrequency == 0) {
       self ! StartSnapshotProcess
     }
